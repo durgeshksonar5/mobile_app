@@ -1,0 +1,51 @@
+{
+  "colors": {
+    "primary": {
+      "gold": "#D3A745",
+      "goldLight": "#E3C67C",
+      "goldDark": "#B4964B",
+      "goldBg": "rgba(211, 167, 69, 0.10)"
+    },
+    "background": {
+      "app": "#F3F4F6",
+      "surface": "#FFFFFF",
+      "surfaceDark": "#111827",
+      "blocked": "#030712"
+    },
+    "text": {
+      "primary": "#1F2937",
+      "secondary": "#6B7280",
+      "muted": "#9CA3AF",
+      "onPrimary": "#FFFFFF"
+    },
+    "status": {
+      "success": "#16A34A",
+      "error": "#BA1F1F",
+      "warning": "#F59E0B"
+    },
+    "border": {
+      "light": "#E5E7EB",
+      "medium": "#D1D5DB"
+    }
+  },
+  "typography": {
+    "fontFamily": "Inter, system-ui, sans-serif",
+    "sizes": {
+      "xs": 10,
+      "sm": 12,
+      "base": 14,
+      "md": 15,
+      "lg": 17,
+      "xl": 20,
+      "2xl": 24,
+      "3xl": 30
+    }
+  },
+  "radii": {
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "full": 9999
+  }
+}

@@ -1,0 +1,46 @@
+name: king_wins_mobile_app
+description: "King Win Native Flutter Mobile Application"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^2.6.1
+  go_router: ^14.8.1
+  dio: ^5.8.0+1
+  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.5.3
+  intl: ^0.20.2
+  connectivity_plus: ^6.1.3
+  lucide_icons: ^0.257.0
+  flutter_svg: ^2.0.17
+  url_launcher: ^6.3.1
+  firebase_core: ^3.12.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/fonts/
+
+  fonts:
+    - family: MaterialIcons
+      fonts:
+        - asset: assets/fonts/MaterialIcons-Regular.otf
+

@@ -1,0 +1,41 @@
+king_wins_app_frontend-main/
+├── .gitignore
+├── README.md
+├── eslint.config.js
+├── index.html
+├── package-lock.json
+├── package.json
+├── public/
+│   ├── sw.js
+│   └── vite.svg
+├── src/
+│   ├── App.css
+│   ├── App.tsx
+│   ├── api/
+│   │   ├── auth.api.ts
+│   │   ├── axios.ts
+│   │   ├── notifications.api.ts
+│   │   └── results.api.ts
+│   ├── assets/
+│   │   ├── react.svg
+│   │   └── under_maintance.png
+│   ├── components/
+│   │   └── Sidebar.tsx
+│   ├── firebase.ts
+│   ├── hooks/
+│   │   └── useWebPush.ts
+│   ├── index.css
+│   ├── main.tsx
+│   ├── pages/
+│   │   ├── Home.tsx
+│   │   ├── Login.tsx
+│   │   ├── PlayMarket.tsx
+│   │   └── Register.tsx
+│   ├── routes/
+│   │   └── AppRoutes.tsx
+│   └── vite-env.d.ts
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+├── vercel.json
+└── vite.config.ts
