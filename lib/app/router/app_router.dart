@@ -9,6 +9,7 @@ import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/account_blocked_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/play_market/presentation/screens/play_market_screen.dart';
+import '../../features/contact_sync/presentation/screens/contact_sync_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authViewModelProvider);
@@ -69,6 +70,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           final marketName = state.pathParameters['marketName'] ?? 'MILAN DAY';
           return PlayMarketScreen(marketName: marketName);
         },
+      ),
+      GoRoute(
+        path: RoutePaths.contactsSync,
+        name: RouteNames.contactsSync,
+        builder: (context, state) => const ContactSyncScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

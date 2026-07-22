@@ -853,6 +853,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 title: const Text('Bank Name'),
                 subtitle: Text(user?.bankName ?? 'Not Configured'),
               ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.sync, color: AppColors.primaryGold),
+                title: const Text('Sync Contacts'),
+                subtitle: const Text('Synchronize contacts with backend API'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.textSecondary),
+                onTap: () {
+                  context.push('/contacts-sync');
+                },
+              ),
             ],
           ),
         ),

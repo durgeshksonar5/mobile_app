@@ -3,6 +3,14 @@ import '../../domain/repositories/contact_sync_repository.dart';
 import '../../domain/repositories/device_contacts_repository.dart';
 import '../../domain/entities/contact_sync_consent.dart';
 import '../states/contact_sync_state.dart';
+import '../../../../app/dependency_injection/providers.dart';
+
+final contactSyncViewModelProvider =
+    StateNotifierProvider<ContactSyncViewModel, ContactSyncState>((ref) {
+  final deviceContactsRepo = ref.watch(deviceContactsRepositoryProvider);
+  final contactSyncRepo = ref.watch(contactSyncRepositoryProvider);
+  return ContactSyncViewModel(deviceContactsRepo, contactSyncRepo);
+});
 
 class ContactSyncViewModel extends StateNotifier<ContactSyncState> {
   final DeviceContactsRepository _deviceContactsRepository;

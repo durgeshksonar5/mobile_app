@@ -1,22 +1,16 @@
-import 'contact_phone_dto.dart';
-import 'contact_email_dto.dart';
-
 class ContactSyncItemDto {
   final String name;
-  final List<ContactPhoneDto> phones;
-  final List<ContactEmailDto> emails;
+  final String phone;
 
   const ContactSyncItemDto({
     required this.name,
-    required this.phones,
-    this.emails = const [],
+    required this.phone,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'phones': phones.map((p) => p.toJson()).toList(),
-      if (emails.isNotEmpty) 'emails': emails.map((e) => e.toJson()).toList(),
+      'phone': phone,
     };
   }
 }

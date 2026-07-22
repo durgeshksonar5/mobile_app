@@ -5,4 +5,5 @@ class RouteNames {
   static const String accountBlocked = 'accountBlocked';
   static const String home = 'home';
   static const String playMarket = 'playMarket';
+  static const String contactsSync = 'contactsSync';
 }

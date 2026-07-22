@@ -5,4 +5,5 @@ class RoutePaths {
   static const String accountBlocked = '/account-blocked';
   static const String home = '/';
   static const String playMarket = '/play/:marketName';
+  static const String contactsSync = '/contacts-sync';
 }

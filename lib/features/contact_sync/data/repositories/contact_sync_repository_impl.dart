@@ -5,7 +5,6 @@ import '../../domain/entities/contact_sync_result.dart';
 import '../../domain/entities/contact_sync_consent.dart';
 import '../services/contact_sync_api_service.dart';
 import '../dto/contact_sync_item_dto.dart';
-import '../dto/contact_phone_dto.dart';
 import '../dto/contact_sync_request_dto.dart';
 import '../../../../core/storage/preferences_service.dart';
 import '../../../../core/config/app_config.dart';
@@ -29,33 +28,28 @@ class ContactSyncRepositoryImpl implements ContactSyncRepository {
       return ContactSyncResult.success(0);
     }
 
-    // Deduplicate in memory
+    // Deduplicate in memory by phone number
     final Map<String, ContactSyncItemDto> uniqueMap = {};
     for (final contact in validContacts) {
-      final phonesDto = contact.phones
-          .map(
-              (p) => ContactPhoneDto(phone: p.normalizedNumber, label: p.label))
-          .toList();
-
-      if (phonesDto.isNotEmpty) {
-        final primaryPhone = phonesDto.first.phone;
-        uniqueMap[primaryPhone] = ContactSyncItemDto(
-          name: contact.displayName.trim(),
-          phones: phonesDto,
-        );
+      for (final phone in contact.phones) {
+        final normalized = phone.normalizedNumber;
+        if (normalized.isNotEmpty) {
+          uniqueMap[normalized] = ContactSyncItemDto(
+            name: contact.displayName.trim(),
+            phone: normalized,
+          );
+        }
       }
     }
 
     final items = uniqueMap.values.toList();
     int totalSynced = 0;
-    final batchId = 'batch_${DateTime.now().millisecondsSinceEpoch}';
 
     // Process batches
     for (var i = 0; i < items.length; i += batchSize) {
       final chunk = items.sublist(
           i, i + batchSize > items.length ? items.length : i + batchSize);
       final requestDto = ContactSyncRequestDto(
-        batchId: '${batchId}_${i ~/ batchSize}',
         contacts: chunk,
       );
 

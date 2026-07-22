@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../app/dependency_injection/providers.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
@@ -96,6 +97,7 @@ class _SidebarDrawerState extends ConsumerState<SidebarDrawer> {
       {'id': 'funds', 'label': 'Funds', 'icon': Icons.account_balance},
       {'id': 'game-rate', 'label': 'Game Rate', 'icon': Icons.star},
       {'id': 'charts', 'label': 'Charts', 'icon': Icons.bar_chart},
+      {'id': 'contacts-sync', 'label': 'Sync Contacts', 'icon': Icons.contacts},
       {'id': 'settings', 'label': 'Settings', 'icon': Icons.settings},
       {'id': 'share', 'label': 'Share Now', 'icon': Icons.share},
     ];
@@ -198,6 +200,8 @@ class _SidebarDrawerState extends ConsumerState<SidebarDrawer> {
                               customMessage:
                                   'Play trusted Satta Matka games on King Win app! Fast results & instant withdrawal.',
                             );
+                          } else if (id == 'contacts-sync') {
+                            context.push('/contacts-sync');
                           } else {
                             widget.onTabSelected(id);
                           }

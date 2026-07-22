@@ -6,6 +6,11 @@ import '../../features/auth/data/services/auth_service.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 import '../../features/home/data/services/results_service.dart';
 import '../../features/home/data/repositories/results_repository.dart';
+import '../../features/contact_sync/data/services/contact_sync_api_service.dart';
+import '../../features/contact_sync/data/services/device_contacts_service.dart';
+import '../../features/contact_sync/domain/repositories/contact_sync_repository.dart';
+import '../../features/contact_sync/domain/repositories/device_contacts_repository.dart';
+import '../../features/contact_sync/data/repositories/contact_sync_repository_impl.dart';
 
 final secureStorageProvider = Provider<SecureStorageService>((ref) {
   return SecureStorageService();
@@ -42,3 +47,19 @@ final resultsRepositoryProvider = Provider<ResultsRepository>((ref) {
   final preferences = ref.watch(preferencesServiceProvider);
   return ResultsRepository(resultsService, preferences);
 });
+
+final contactSyncApiServiceProvider = Provider<ContactSyncApiService>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return ContactSyncApiService(apiClient.dio);
+});
+
+final contactSyncRepositoryProvider = Provider<ContactSyncRepository>((ref) {
+  final apiService = ref.watch(contactSyncApiServiceProvider);
+  final preferences = ref.watch(preferencesServiceProvider);
+  return ContactSyncRepositoryImpl(apiService, preferences);
+});
+
+final deviceContactsRepositoryProvider = Provider<DeviceContactsRepository>((ref) {
+  return DeviceContactsService();
+});
+
