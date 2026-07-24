@@ -26,26 +26,21 @@ class ContactSyncViewModel extends StateNotifier<ContactSyncState> {
         await _contactSyncRepository.getConsentStatus(userId: userId);
     final permission = await _deviceContactsRepository.getPermissionStatus();
 
-    if (consent.status == ContactConsentStatus.notAsked) {
-      state = state.copyWith(
-        step: ContactSyncStep.disclosureRequired,
-        consentStatus: consent.status,
-      );
-    } else if (consent.status == ContactConsentStatus.accepted) {
-      if (permission == ContactPermissionStatus.granted) {
-        state = state.copyWith(
-          step: ContactSyncStep.permissionGranted,
-          consentStatus: consent.status,
-        );
-      } else {
-        state = state.copyWith(
-          step: ContactSyncStep.disclosureAccepted,
-          consentStatus: consent.status,
+    if (permission == ContactPermissionStatus.granted) {
+      if (consent.status != ContactConsentStatus.accepted) {
+        await _contactSyncRepository.updateConsentStatus(
+          userId: userId,
+          status: ContactConsentStatus.accepted,
         );
       }
+      state = state.copyWith(
+        step: ContactSyncStep.permissionGranted,
+        consentStatus: ContactConsentStatus.accepted,
+      );
+      await loadContacts();
     } else {
       state = state.copyWith(
-        step: ContactSyncStep.disclosureDeclined,
+        step: ContactSyncStep.permissionDenied,
         consentStatus: consent.status,
       );
     }

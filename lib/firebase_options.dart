@@ -30,24 +30,24 @@ class DefaultFirebaseOptions {
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyA_sms_provided_placeholder_web_key',
     appId: '1:100000000000:web:sms_provided_app_id',
-    messagingSenderId: '100000000000',
+    messagingSenderId: '431988721987',
     projectId: 'sms-provided',
     authDomain: 'sms-provided.firebaseapp.com',
     storageBucket: 'sms-provided.appspot.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyA_sms_provided_placeholder_android_key',
-    appId: '1:100000000000:android:sms_provided_android_app_id',
-    messagingSenderId: '100000000000',
+    apiKey: 'AIzaSyDN3FzDdvg9EnRrbOhWr7SqDjngz_DZ568',
+    appId: '1:431988721987:android:09906a61a1d850aaef47f6',
+    messagingSenderId: '431988721987',
     projectId: 'sms-provided',
-    storageBucket: 'sms-provided.appspot.com',
+    storageBucket: 'sms-provided.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyA_sms_provided_placeholder_ios_key',
     appId: '1:100000000000:ios:sms_provided_ios_app_id',
-    messagingSenderId: '100000000000',
+    messagingSenderId: '431988721987',
     projectId: 'sms-provided',
     storageBucket: 'sms-provided.appspot.com',
     iosBundleId: 'com.kingwin.app.kingWinsMobileApp',
@@ -56,7 +56,7 @@ class DefaultFirebaseOptions {
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyA_sms_provided_placeholder_ios_key',
     appId: '1:100000000000:ios:sms_provided_ios_app_id',
-    messagingSenderId: '100000000000',
+    messagingSenderId: '431988721987',
     projectId: 'sms-provided',
     storageBucket: 'sms-provided.appspot.com',
     iosBundleId: 'com.kingwin.app.kingWinsMobileApp',
@@ -65,7 +65,7 @@ class DefaultFirebaseOptions {
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyA_sms_provided_placeholder_web_key',
     appId: '1:100000000000:web:sms_provided_app_id',
-    messagingSenderId: '100000000000',
+    messagingSenderId: '431988721987',
     projectId: 'sms-provided',
     authDomain: 'sms-provided.firebaseapp.com',
     storageBucket: 'sms-provided.appspot.com',

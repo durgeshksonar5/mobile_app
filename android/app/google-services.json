@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "431988721987",
+    "project_id": "sms-provided",
+    "storage_bucket": "sms-provided.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:431988721987:android:09906a61a1d850aaef47f6",
+        "android_client_info": {
+          "package_name": "com.kingwins.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDN3FzDdvg9EnRrbOhWr7SqDjngz_DZ568"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

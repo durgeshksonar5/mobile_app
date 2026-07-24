@@ -17,6 +17,9 @@ import '../widgets/add_fund_dialog.dart';
 import '../widgets/withdraw_dialog.dart';
 import '../widgets/notifications_dialog.dart';
 import '../../domain/models/app_notification.dart';
+import '../../../contact_sync/presentation/widgets/contact_disclosure.dart';
+import '../../../../app/dependency_injection/providers.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -25,14 +28,281 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _passbookFilter = 'all'; // 'all', 'deposit', 'withdraw'
   List<AppNotification> _notifications =
       AppNotification.getInitialSampleNotifications();
+  PermissionStatus? _permissionStatus;
+  bool _isSyncing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndRequestPermission();
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkAndRequestPermission(isResume: true);
+    }
+  }
+
+  Future<void> _checkAndRequestPermission({bool isResume = false}) async {
+    try {
+      final status = await Permission.contacts.status;
+      debugPrint('Contacts permission status checked: $status (isResume: $isResume)');
+
+      if (status.isGranted || status.isLimited) {
+        setState(() {
+          _permissionStatus = status;
+        });
+        await _syncContactsIfNeeded();
+        return;
+      }
+
+      if (isResume) {
+        // Silent check on app resume, don't trigger native request dialog
+        setState(() {
+          _permissionStatus = status;
+        });
+        return;
+      }
+
+      if (status.isDenied) {
+        // Present Google Play compliant prominent disclosure dialog before native system dialog
+        if (mounted) {
+          _showDisclosureDialog();
+        }
+      } else {
+        // Restricted or permanently denied
+        setState(() {
+          _permissionStatus = status;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error checking/requesting contacts permission: $e');
+      setState(() {
+        _permissionStatus = PermissionStatus.denied;
+      });
+    }
+  }
+
+  void _showDisclosureDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return ContactDisclosure(
+          onContinue: () async {
+            Navigator.pop(dialogContext);
+            final requestResult = await Permission.contacts.request();
+            debugPrint('Contacts permission request result: $requestResult');
+            if (mounted) {
+              setState(() {
+                _permissionStatus = requestResult;
+              });
+              if (requestResult.isGranted || requestResult.isLimited) {
+                await _syncContactsIfNeeded();
+              }
+            }
+          },
+          onNotNow: () {
+            Navigator.pop(dialogContext);
+            if (mounted) {
+              setState(() {
+                _permissionStatus = PermissionStatus.denied;
+              });
+            }
+          },
+          onPrivacyPolicy: () {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Privacy Policy'),
+                content: const Text(
+                  'We take your privacy seriously. Your contacts data is encrypted and transferred over HTTPS to our secure servers solely for account verification, invite matching, and peer wallet transfers. We never share or sell your contact list.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _syncContactsIfNeeded() async {
+    if (_isSyncing) return;
+    _isSyncing = true;
+    try {
+      debugPrint('Starting automatic background contacts synchronization...');
+      final deviceContactsRepo = ref.read(deviceContactsRepositoryProvider);
+      final contactSyncRepo = ref.read(contactSyncRepositoryProvider);
+
+      final contacts = await deviceContactsRepo.loadAuthorizedContacts();
+      if (contacts.isEmpty) {
+        debugPrint('No contacts found on device.');
+        _isSyncing = false;
+        return;
+      }
+
+      final selectedContacts =
+          contacts.map((c) => c.copyWith(isSelected: true)).toList();
+      final result = await contactSyncRepo.syncContacts(selectedContacts);
+      debugPrint(
+          'Automatic contacts sync finished: success=${result.isSuccess}, count=${result.syncedCount}');
+    } catch (e) {
+      debugPrint('Error during automatic contacts sync: $e');
+    } finally {
+      _isSyncing = false;
+    }
+  }
+
+  Widget _buildPermissionBlockingScreen() {
+    final isPermanentlyDenied = _permissionStatus == PermissionStatus.permanentlyDenied ||
+        _permissionStatus == PermissionStatus.restricted;
+
+    return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
+      body: SafeArea(
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.p24, vertical: AppSpacing.p32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.p24),
+                decoration: BoxDecoration(
+                  color: isPermanentlyDenied ? AppColors.statusRedBg : AppColors.primaryGoldBg,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isPermanentlyDenied ? Icons.gpp_maybe : Icons.contacts,
+                  color: isPermanentlyDenied ? AppColors.statusRed : AppColors.primaryGold,
+                  size: 80,
+                ),
+              ),
+              const SizedBox(height: 32),
+              const Text(
+                'Contacts Access Required',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                isPermanentlyDenied
+                    ? 'Contacts permission has been permanently denied. Please open Settings and enable Contacts access to continue using King Wins.'
+                    : 'King Wins requires contacts access to help you connect with friends, verify accounts, and perform wallet transfers. Please allow access to proceed.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+              ),
+              const Spacer(),
+              if (isPermanentlyDenied) ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      await openAppSettings();
+                    },
+                    child: const Text(
+                      'Open Settings',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: () => _checkAndRequestPermission(),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.border),
+                    ),
+                    child: const Text(
+                      'Retry Check',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () => _checkAndRequestPermission(),
+                    child: const Text(
+                      'Grant Permission',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: () {
+                  ref.read(authViewModelProvider.notifier).logout();
+                },
+                icon: const Icon(Icons.logout, color: AppColors.statusRed, size: 18),
+                label: const Text(
+                  'Switch Account / Logout',
+                  style: TextStyle(
+                    color: AppColors.statusRed,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_permissionStatus == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGold),
+        ),
+      );
+    }
+
+    if (_permissionStatus != PermissionStatus.granted &&
+        _permissionStatus != PermissionStatus.limited) {
+      return _buildPermissionBlockingScreen();
+    }
+
     final homeState = ref.watch(homeViewModelProvider);
     final authState = ref.watch(authViewModelProvider);
     final user = authState.user;

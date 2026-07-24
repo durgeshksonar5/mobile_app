@@ -10,7 +10,7 @@ class ContactSyncItemDto {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'phone': phone,
+      'phone_number': phone,
     };
   }
 }

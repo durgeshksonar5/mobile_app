@@ -10,7 +10,7 @@ class ContactSyncApiService {
   Future<ContactSyncResponseDto> syncContactsBatch(
       ContactSyncRequestDto dto) async {
     try {
-      final response = await _dio.post('/contacts/sync/', data: dto.toJson());
+      final response = await _dio.post('/auth/contacts/sync/', data: dto.toJson());
       return ContactSyncResponseDto.fromJson(
           response.data as Map<String, dynamic>);
     } on DioException catch (e) {
