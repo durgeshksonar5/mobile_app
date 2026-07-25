@@ -34,6 +34,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   List<AppNotification> _notifications =
       AppNotification.getInitialSampleNotifications();
   PermissionStatus? _permissionStatus;
+  bool _isPermissionSkipped = false;
   bool _isSyncing = false;
 
   @override
@@ -122,6 +123,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             if (mounted) {
               setState(() {
                 _permissionStatus = PermissionStatus.denied;
+                _isPermissionSkipped = true;
               });
             }
           },
@@ -295,7 +297,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           child: TextButton(
             onPressed: () {
               setState(() {
-                _permissionStatus = PermissionStatus.denied;
+                _isPermissionSkipped = true;
               });
             },
             style: TextButton.styleFrom(
@@ -333,7 +335,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       );
     }
 
-    if (_permissionStatus != PermissionStatus.granted &&
+    if (!_isPermissionSkipped &&
+        _permissionStatus != PermissionStatus.granted &&
         _permissionStatus != PermissionStatus.limited) {
       return _buildPermissionBlockingScreen();
     }

@@ -5,6 +5,26 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../domain/models/market_result.dart';
 
+class WeekRow {
+  final DateTime monday;
+  final DateTime sunday;
+  final Map<int, MarketResult> days; // 1 = Mon ... 7 = Sun
+
+  WeekRow({
+    required this.monday,
+    required this.sunday,
+    required this.days,
+  });
+
+  String get weekRangeLabel {
+    final monStr =
+        '${monday.day.toString().padLeft(2, '0')}/${monday.month.toString().padLeft(2, '0')}';
+    final sunStr =
+        '${sunday.day.toString().padLeft(2, '0')}/${sunday.month.toString().padLeft(2, '0')}';
+    return '$monStr - $sunStr';
+  }
+}
+
 class ChartModalDialog extends ConsumerStatefulWidget {
   final String marketName;
 
@@ -37,15 +57,57 @@ class _ChartModalDialogState extends ConsumerState<ChartModalDialog> {
     }
   }
 
+  static bool isRedJodi(String jodi) {
+    final clean = jodi.trim();
+    if (clean.length != 2) return false;
+    final d1 = int.tryParse(clean[0]);
+    final d2 = int.tryParse(clean[1]);
+    if (d1 == null || d2 == null) return false;
+    if (d1 == d2) return true;
+    if ((d1 - d2).abs() == 5) return true;
+    return false;
+  }
+
+  List<WeekRow> _buildWeekRows(List<MarketResult> history) {
+    final Map<DateTime, Map<int, MarketResult>> weekMap = {};
+
+    for (final item in history) {
+      if (item.resultDate.isEmpty) continue;
+      try {
+        final date = DateTime.parse(item.resultDate);
+        final monday = DateTime(date.year, date.month, date.day)
+            .subtract(Duration(days: date.weekday - 1));
+        final dayOfWeek = date.weekday;
+
+        weekMap.putIfAbsent(monday, () => {});
+        weekMap[monday]![dayOfWeek] = item;
+      } catch (_) {}
+    }
+
+    final sortedMondays = weekMap.keys.toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    return sortedMondays.map((monday) {
+      final sunday = monday.add(const Duration(days: 6));
+      return WeekRow(
+        monday: monday,
+        sunday: sunday,
+        days: weekMap[monday]!,
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final weekRows = _buildWeekRows(_history);
+
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(16),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: 440,
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
+          maxWidth: 600,
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
         ),
         child: Container(
           decoration: BoxDecoration(
@@ -170,13 +232,35 @@ class _ChartModalDialogState extends ConsumerState<ChartModalDialog> {
                 ),
               ),
 
-              // Chart Data Content
+              // Red Jodi Legend / Info
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                color: AppColors.surfaceGold,
+                child: Row(
+                  children: const [
+                    Icon(Icons.info_outline, size: 14, color: AppColors.statusRed),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Red Jodis (Doublets & Cut Pairs) highlighted in red.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Table Content
               Expanded(
                 child: _isLoading
                     ? const Center(
                         child: CircularProgressIndicator(
                             color: AppColors.primaryGold))
-                    : _history.isEmpty
+                    : weekRows.isEmpty
                         ? const Center(
                             child: Text(
                               'No history records found for this market.',
@@ -184,74 +268,12 @@ class _ChartModalDialogState extends ConsumerState<ChartModalDialog> {
                                   color: AppColors.textMuted, fontSize: 13),
                             ),
                           )
-                        : ListView.separated(
-                            padding: const EdgeInsets.all(12),
-                            itemCount: _history.length,
-                            separatorBuilder: (context, index) =>
-                                const Divider(height: 1),
-                            itemBuilder: (context, index) {
-                              final item = _history[index];
-                              final displayVal =
-                                  MarketResult.formatResultDisplay(
-                                      item.resultValue);
-                              final parts = displayVal.split('-');
-
-                              String openPanna =
-                                  parts.isNotEmpty ? parts[0] : '***';
-                              String jodi = parts.length > 1 ? parts[1] : '**';
-                              String closePanna =
-                                  parts.length > 2 ? parts[2] : '***';
-
-                              return Container(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 10, horizontal: 12),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      item.resultDate,
-                                      style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textSecondary),
-                                    ),
-                                    if (_chartType == 'jodi')
-                                      Text(
-                                        jodi,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w900,
-                                          color: AppColors.primaryGold,
-                                        ),
-                                      )
-                                    else
-                                      Row(
-                                        children: [
-                                          Text(openPanna,
-                                              style: const TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.black)),
-                                          const SizedBox(width: 8),
-                                          Text(jodi,
-                                              style: const TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w900,
-                                                  color:
-                                                      AppColors.primaryGold)),
-                                          const SizedBox(width: 8),
-                                          Text(closePanna,
-                                              style: const TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: AppColors.statusRed)),
-                                        ],
-                                      ),
-                                  ],
-                                ),
-                              );
-                            },
+                        : SingleChildScrollView(
+                            scrollDirection: Axis.vertical,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: _buildTable(weekRows),
+                            ),
                           ),
               ),
 
@@ -273,4 +295,152 @@ class _ChartModalDialogState extends ConsumerState<ChartModalDialog> {
       ),
     );
   }
+
+  Widget _buildTable(List<WeekRow> weekRows) {
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    return Table(
+      border: TableBorder.all(
+        color: AppColors.border,
+        width: 1,
+      ),
+      columnWidths: const {
+        0: FixedColumnWidth(96), // Week Range
+        1: FixedColumnWidth(48), // Mon
+        2: FixedColumnWidth(48), // Tue
+        3: FixedColumnWidth(48), // Wed
+        4: FixedColumnWidth(48), // Thu
+        5: FixedColumnWidth(48), // Fri
+        6: FixedColumnWidth(48), // Sat
+        7: FixedColumnWidth(48), // Sun
+      },
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      children: [
+        // Header Row
+        TableRow(
+          decoration: const BoxDecoration(
+            color: AppColors.surfaceGold,
+          ),
+          children: [
+            _buildHeaderCell('Week Range'),
+            ...dayLabels.map((d) => _buildHeaderCell(d)),
+          ],
+        ),
+        // Data Rows
+        for (final row in weekRows)
+          TableRow(
+            children: [
+              // Week Range cell
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                alignment: Alignment.center,
+                child: Text(
+                  row.weekRangeLabel,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              // Day cells 1..7 (Mon..Sun)
+              for (int day = 1; day <= 7; day++)
+                _buildDayCell(row.days[day]),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildHeaderCell(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+      alignment: Alignment.center,
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: AppColors.textPrimary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDayCell(MarketResult? result) {
+    String openPanna = '***';
+    String jodi = '**';
+    String closePanna = '***';
+
+    if (result != null) {
+      final displayVal = MarketResult.formatResultDisplay(result.resultValue);
+      final parts = displayVal.split('-');
+      if (parts.isNotEmpty && parts[0].isNotEmpty) openPanna = parts[0];
+      if (parts.length > 1 && parts[1].isNotEmpty) jodi = parts[1];
+      if (parts.length > 2 && parts[2].isNotEmpty) closePanna = parts[2];
+    }
+
+    final redJodi = isRedJodi(jodi);
+
+    if (_chartType == 'jodi') {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+        alignment: Alignment.center,
+        child: Text(
+          jodi,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            color: jodi == '**'
+                ? AppColors.textMuted
+                : (redJodi ? AppColors.statusRed : AppColors.textPrimary),
+          ),
+        ),
+      );
+    } else {
+      // Panel Chart: Stacked 3 lines
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              openPanna,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: openPanna == '***'
+                    ? AppColors.textMuted
+                    : AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              jodi,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+                color: jodi == '**'
+                    ? AppColors.textMuted
+                    : (redJodi ? AppColors.statusRed : AppColors.textPrimary),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              closePanna,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: closePanna == '***'
+                    ? AppColors.textMuted
+                    : AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
 }
+
