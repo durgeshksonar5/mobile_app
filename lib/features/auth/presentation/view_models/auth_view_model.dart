@@ -90,6 +90,21 @@ class AuthViewModel extends StateNotifier<AuthState> {
     }
   }
 
+  Future<bool> updateProfile(Map<String, dynamic> data) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final updatedUser = await _authRepository.updateProfile(data);
+      state = state.copyWith(isLoading: false, user: updatedUser);
+      return true;
+    } on AppException catch (e) {
+      state = state.copyWith(isLoading: false, error: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     state = state.copyWith(isLoading: true);
     await _authRepository.logout();

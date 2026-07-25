@@ -12,6 +12,9 @@ import 'package:king_wins_mobile_app/features/home/domain/models/passbook_item.d
 import 'package:king_wins_mobile_app/features/home/domain/models/bid_item.dart';
 import 'package:king_wins_mobile_app/features/home/domain/models/game_rate.dart';
 
+import 'package:king_wins_mobile_app/features/wallet/domain/models/wallet_balance.dart';
+import 'package:king_wins_mobile_app/features/wallet/domain/repositories/wallet_repository.dart';
+
 class FakeAuthRepository implements AuthRepository {
   static const dummyUser = UserModel(
     id: 1,
@@ -35,6 +38,14 @@ class FakeAuthRepository implements AuthRepository {
   Future<UserModel> updateProfile(Map<String, dynamic> data) async => dummyUser;
   @override
   Future<void> logout() async {}
+}
+
+class FakeWalletRepository implements WalletRepository {
+  @override
+  Future<WalletBalance> getWalletBalance() async =>
+      const WalletBalance(availableBalance: 1000);
+  @override
+  Future<void> clearCache() async {}
 }
 
 class FakeResultsRepository implements ResultsRepository {
@@ -68,22 +79,25 @@ void main() {
   });
 
   testWidgets(
-      'HomeScreen renders header, action grid, and bottom navigation items',
+      'HomeScreen renders header, action grid, dynamic wallet balance, and bottom navigation items',
       (WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+          walletRepositoryProvider.overrideWithValue(FakeWalletRepository()),
           resultsRepositoryProvider.overrideWithValue(FakeResultsRepository()),
         ],
         child: const MaterialApp(
-          home: HomeScreen(),
+          home: HomeScreen(initialPermissionSkipped: true),
         ),
       ),
     );
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('King Win'), findsOneWidget);
+    expect(find.text('1000'), findsOneWidget);
     expect(find.text('Add Fund'), findsOneWidget);
     expect(find.text('Withdraw'), findsOneWidget);
     expect(find.text('Bid History'), findsOneWidget);

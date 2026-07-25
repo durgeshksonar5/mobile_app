@@ -55,7 +55,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('MILAN DAY'), findsWidgets);
-    expect(find.text('Single'), findsOneWidget);
+    expect(find.text('Single Ank'), findsOneWidget);
     expect(find.text('Jodi'), findsOneWidget);
     expect(find.text('Single Panna'), findsOneWidget);
     expect(find.text('Double Panna'), findsOneWidget);

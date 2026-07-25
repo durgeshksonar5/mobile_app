@@ -84,8 +84,7 @@ class _ChartModalDialogState extends ConsumerState<ChartModalDialog> {
       } catch (_) {}
     }
 
-    final sortedMondays = weekMap.keys.toList()
-      ..sort((a, b) => b.compareTo(a));
+    final sortedMondays = weekMap.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return sortedMondays.map((monday) {
       final sunday = monday.add(const Duration(days: 6));
@@ -155,8 +154,8 @@ class _ChartModalDialogState extends ConsumerState<ChartModalDialog> {
                         const SizedBox(height: 2),
                         const Text(
                           'Historical Jodi & Panel Results',
-                          style:
-                              TextStyle(fontSize: 11, color: AppColors.textPrimary),
+                          style: TextStyle(
+                              fontSize: 11, color: AppColors.textPrimary),
                         ),
                       ],
                     ),
@@ -234,11 +233,13 @@ class _ChartModalDialogState extends ConsumerState<ChartModalDialog> {
 
               // Red Jodi Legend / Info
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 color: AppColors.surfaceGold,
                 child: Row(
                   children: const [
-                    Icon(Icons.info_outline, size: 14, color: AppColors.statusRed),
+                    Icon(Icons.info_outline,
+                        size: 14, color: AppColors.statusRed),
                     SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -344,8 +345,7 @@ class _ChartModalDialogState extends ConsumerState<ChartModalDialog> {
                 ),
               ),
               // Day cells 1..7 (Mon..Sun)
-              for (int day = 1; day <= 7; day++)
-                _buildDayCell(row.days[day]),
+              for (int day = 1; day <= 7; day++) _buildDayCell(row.days[day]),
             ],
           ),
       ],
@@ -443,4 +443,3 @@ class _ChartModalDialogState extends ConsumerState<ChartModalDialog> {
     }
   }
 }
-

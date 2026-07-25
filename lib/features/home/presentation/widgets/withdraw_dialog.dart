@@ -4,7 +4,10 @@ import '../../../../app/dependency_injection/providers.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../auth/domain/models/user_model.dart';
+import '../../../wallet/presentation/view_models/wallet_view_model.dart';
 import '../view_models/home_view_model.dart';
+
+import '../../../../core/services/external_link_service.dart';
 
 class WithdrawDialog extends ConsumerStatefulWidget {
   final UserModel? user;
@@ -27,18 +30,20 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
 
   void _submitWithdraw() async {
     final user = widget.user;
-    if (user == null ||
-        (user.ifscCode == null || user.ifscCode!.isEmpty) ||
-        (user.bankName == null || user.bankName!.isEmpty) ||
-        (user.accountNumber == null || user.accountNumber!.isEmpty) ||
-        (user.upiId == null || user.upiId!.isEmpty) ||
-        (user.upiNumber == null || user.upiNumber!.isEmpty)) {
+    final hasBankDetails =
+        (user?.bankName != null && user!.bankName!.isNotEmpty) &&
+            (user.accountNumber != null && user.accountNumber!.isNotEmpty) &&
+            (user.ifscCode != null && user.ifscCode!.isNotEmpty);
+    final hasUpiDetails = (user?.upiId != null && user!.upiId!.isNotEmpty) ||
+        (user?.upiNumber != null && user!.upiNumber!.isNotEmpty);
+
+    if (user == null || (!hasBankDetails && !hasUpiDetails)) {
       Navigator.pop(context);
       ref.read(homeViewModelProvider.notifier).setActiveTab('settings');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Please fill all your banking and UPI details in Settings before placing a withdrawal request.'),
+              'Please fill your Bank or UPI details in Settings before placing a withdrawal request.'),
         ),
       );
       return;
@@ -66,19 +71,29 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
     try {
       final repo = ref.read(resultsRepositoryProvider);
       await repo.createWithdrawRequest(amt);
+      ref.read(walletViewModelProvider.notifier).fetchBalance(isRefresh: true);
+      ExternalLinkService.launchWhatsApp(
+        customMessage:
+            'Hi Admin, I have submitted a withdrawal request of ₹$amt on King Win app.',
+      );
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(
-                  'Withdrawal request of ₹$amt submitted successfully! Please wait for admin approval.')),
+            backgroundColor: AppColors.statusGreen,
+            content: Text(
+                'Withdrawal request of ₹$amt submitted successfully! Admin will approve it shortly.'),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            backgroundColor: AppColors.statusRed,
+            content: Text('Failed to submit withdrawal request: $e'),
+          ),
         );
       }
     }

@@ -2,7 +2,8 @@ import '../../../../core/utils/panna_generator.dart';
 
 class PlayMarketState {
   final bool isLoading;
-  final String activeGame; // 'list', 'single', 'jodi', 'single-panna', 'double-panna', 'triple-panna', 'sp-motor', 'dp-motor', 'sp-dp-tp', 'half-sagam', 'full-sagam', 'family-panel'
+  final String
+      activeGame; // 'list', 'single', 'jodi', 'single-panna', 'double-panna', 'triple-panna', 'sp-motor', 'dp-motor', 'sp-dp-tp', 'half-sagam', 'full-sagam', 'family-panel'
   final String session; // 'open' or 'close'
   final bool openDisabled;
   final String? selectedNumber;
@@ -12,7 +13,8 @@ class PlayMarketState {
   final String searchQuery;
   final int spDpTpAnk; // 0-9 base digit for SP DP TP
   final List<String> spDpTpChoices;
-  final String halfSangamType; // 'open_panna_close_digit' or 'open_digit_close_panna'
+  final String
+      halfSangamType; // 'open_panna_close_digit' or 'open_digit_close_panna'
   final String halfPanna;
   final String halfDigit;
   final String fullOpenPanna;
@@ -113,4 +115,3 @@ class PlayMarketState {
     );
   }
 }
-

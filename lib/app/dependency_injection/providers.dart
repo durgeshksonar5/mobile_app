@@ -11,6 +11,9 @@ import '../../features/contact_sync/data/services/device_contacts_service.dart';
 import '../../features/contact_sync/domain/repositories/contact_sync_repository.dart';
 import '../../features/contact_sync/domain/repositories/device_contacts_repository.dart';
 import '../../features/contact_sync/data/repositories/contact_sync_repository_impl.dart';
+import '../../features/wallet/data/services/wallet_api_service.dart';
+import '../../features/wallet/domain/repositories/wallet_repository.dart';
+import '../../features/wallet/data/repositories/wallet_repository_impl.dart';
 
 final secureStorageProvider = Provider<SecureStorageService>((ref) {
   return SecureStorageService();
@@ -59,7 +62,18 @@ final contactSyncRepositoryProvider = Provider<ContactSyncRepository>((ref) {
   return ContactSyncRepositoryImpl(apiService, preferences);
 });
 
-final deviceContactsRepositoryProvider = Provider<DeviceContactsRepository>((ref) {
+final deviceContactsRepositoryProvider =
+    Provider<DeviceContactsRepository>((ref) {
   return DeviceContactsService();
 });
 
+final walletApiServiceProvider = Provider<WalletApiService>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return WalletApiService(apiClient);
+});
+
+final walletRepositoryProvider = Provider<WalletRepository>((ref) {
+  final apiService = ref.watch(walletApiServiceProvider);
+  final preferences = ref.watch(preferencesServiceProvider);
+  return WalletRepositoryImpl(apiService, preferences);
+});

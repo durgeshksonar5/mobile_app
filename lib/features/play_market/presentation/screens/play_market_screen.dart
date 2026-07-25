@@ -87,17 +87,94 @@ class PlayMarketScreen extends ConsumerWidget {
   Widget _buildGameModesGrid(
       BuildContext context, String marketName, PlayMarketViewModel notifier) {
     final gameModes = [
-      {'id': 'single', 'name': 'Single Ank', 'icon': Icons.filter_1},
-      {'id': 'jodi', 'name': 'Jodi', 'icon': Icons.grid_view},
-      {'id': 'single-panna', 'name': 'Single Panna', 'icon': Icons.description},
-      {'id': 'double-panna', 'name': 'Double Panna', 'icon': Icons.content_copy},
-      {'id': 'triple-panna', 'name': 'Triple Panna', 'icon': Icons.layers},
-      {'id': 'sp-motor', 'name': 'SP Motor', 'icon': Icons.memory},
-      {'id': 'dp-motor', 'name': 'DP Motor', 'icon': Icons.album},
-      {'id': 'sp-dp-tp', 'name': 'SP DP TP', 'icon': Icons.grid_on},
-      {'id': 'family-panel', 'name': 'Family Panel', 'icon': Icons.people},
-      {'id': 'half-sagam', 'name': 'Half Sangam', 'icon': Icons.call_split},
-      {'id': 'full-sagam', 'name': 'Full Sangam', 'icon': Icons.fullscreen},
+      {
+        'id': 'single',
+        'name': 'Single Ank',
+        'icon': Icons.filter_1,
+        'color': const Color(0xFF2C1A1D),
+        'border': const Color(0xFFF87171),
+        'iconColor': const Color(0xFFFCA5A5),
+      },
+      {
+        'id': 'jodi',
+        'name': 'Jodi',
+        'icon': Icons.grid_view,
+        'color': const Color(0xFF271A35),
+        'border': const Color(0xFFC084FC),
+        'iconColor': const Color(0xFFE9D5FF),
+      },
+      {
+        'id': 'single-panna',
+        'name': 'Single Panna',
+        'icon': Icons.description,
+        'color': const Color(0xFF14243B),
+        'border': const Color(0xFF60A5FA),
+        'iconColor': const Color(0xFFBFDBFE),
+      },
+      {
+        'id': 'double-panna',
+        'name': 'Double Panna',
+        'icon': Icons.content_copy,
+        'color': const Color(0xFF132B25),
+        'border': const Color(0xFF34D399),
+        'iconColor': const Color(0xFFA7F3D0),
+      },
+      {
+        'id': 'triple-panna',
+        'name': 'Triple Panna',
+        'icon': Icons.layers,
+        'color': const Color(0xFF332910),
+        'border': const Color(0xFFFBBF24),
+        'iconColor': const Color(0xFFFDE68A),
+      },
+      {
+        'id': 'sp-motor',
+        'name': 'SP Motor',
+        'icon': Icons.memory,
+        'color': const Color(0xFF112A34),
+        'border': const Color(0xFF22D3EE),
+        'iconColor': const Color(0xFFA5F3FC),
+      },
+      {
+        'id': 'dp-motor',
+        'name': 'DP Motor',
+        'icon': Icons.album,
+        'color': const Color(0xFF1B2D1B),
+        'border': const Color(0xFF4ADE80),
+        'iconColor': const Color(0xFFBBF7D0),
+      },
+      {
+        'id': 'sp-dp-tp',
+        'name': 'SP DP TP',
+        'icon': Icons.grid_on,
+        'color': const Color(0xFF332014),
+        'border': const Color(0xFFFB923C),
+        'iconColor': const Color(0xFFFFEDD5),
+      },
+      {
+        'id': 'family-panel',
+        'name': 'Family Panel',
+        'icon': Icons.people,
+        'color': const Color(0xFF331924),
+        'border': const Color(0xFFF472B6),
+        'iconColor': const Color(0xFFFBCFE8),
+      },
+      {
+        'id': 'half-sagam',
+        'name': 'Half Sangam',
+        'icon': Icons.call_split,
+        'color': const Color(0xFF1E1F3B),
+        'border': const Color(0xFF818CF8),
+        'iconColor': const Color(0xFFC7D2FE),
+      },
+      {
+        'id': 'full-sagam',
+        'name': 'Full Sangam',
+        'icon': Icons.fullscreen,
+        'color': const Color(0xFF331730),
+        'border': const Color(0xFFE879F9),
+        'iconColor': const Color(0xFFF5D0FE),
+      },
     ];
 
     return ListView(
@@ -164,6 +241,9 @@ class PlayMarketScreen extends ConsumerWidget {
             final IconData icon = mode['icon'] as IconData;
             final String id = mode['id'] as String;
             final String name = mode['name'] as String;
+            final Color color = mode['color'] as Color;
+            final Color border = mode['border'] as Color;
+            final Color iconColor = mode['iconColor'] as Color;
 
             return InkWell(
               onTap: () => notifier.selectGame(id),
@@ -171,14 +251,14 @@ class PlayMarketScreen extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1F2937),
+                  color: color,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFF374151)),
+                  border: Border.all(color: border, width: 1.5),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, size: 32, color: AppColors.primaryGold),
+                    Icon(icon, size: 32, color: iconColor),
                     const SizedBox(height: 10),
                     Text(
                       name,
@@ -282,9 +362,8 @@ class PlayMarketScreen extends ConsumerWidget {
                         children: [
                           Expanded(
                             child: _buildSessionButton(
-                              label: state.openDisabled
-                                  ? 'OPEN (Closed)'
-                                  : 'OPEN',
+                              label:
+                                  state.openDisabled ? 'OPEN (Closed)' : 'OPEN',
                               isSelected: state.session == 'open',
                               isDisabled: state.openDisabled,
                               onTap: () => notifier.setSession('open'),
@@ -335,7 +414,9 @@ class PlayMarketScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primaryGold
-              : (isDisabled ? const Color(0xFF374151) : const Color(0xFF111827)),
+              : (isDisabled
+                  ? const Color(0xFF374151)
+                  : const Color(0xFF111827)),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
@@ -361,8 +442,8 @@ class PlayMarketScreen extends ConsumerWidget {
   // ---------------------------------------------------------------------------
   // Custom Game Input Pads Switcher
   // ---------------------------------------------------------------------------
-  Widget _buildGameInputPad(
-      BuildContext context, PlayMarketState state, PlayMarketViewModel notifier) {
+  Widget _buildGameInputPad(BuildContext context, PlayMarketState state,
+      PlayMarketViewModel notifier) {
     switch (state.activeGame) {
       case 'single':
         return _buildSingleAnkPad(state, notifier);
@@ -390,7 +471,8 @@ class PlayMarketScreen extends ConsumerWidget {
   }
 
   // 2.1 Single Ank Pad (0-9 Circular Grid)
-  Widget _buildSingleAnkPad(PlayMarketState state, PlayMarketViewModel notifier) {
+  Widget _buildSingleAnkPad(
+      PlayMarketState state, PlayMarketViewModel notifier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -545,8 +627,8 @@ class PlayMarketScreen extends ConsumerWidget {
           decoration: InputDecoration(
             hintText: 'Type 3-digit Panna (e.g. 123)...',
             hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
-            prefixIcon:
-                const Icon(Icons.search, color: AppColors.primaryGold, size: 20),
+            prefixIcon: const Icon(Icons.search,
+                color: AppColors.primaryGold, size: 20),
             filled: true,
             fillColor: const Color(0xFF1F2937),
             contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -642,9 +724,8 @@ class PlayMarketScreen extends ConsumerWidget {
             color: isSelected ? AppColors.primaryGold : const Color(0xFF1F2937),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isSelected
-                  ? AppColors.primaryGold
-                  : const Color(0xFF374151),
+              color:
+                  isSelected ? AppColors.primaryGold : const Color(0xFF374151),
             ),
           ),
           child: Text(
@@ -661,8 +742,8 @@ class PlayMarketScreen extends ConsumerWidget {
   }
 
   // 3.1 & 3.2 Motor Pad (SP Motor & DP Motor)
-  Widget _buildMotorPad(
-      PlayMarketState state, PlayMarketViewModel notifier, {required bool isSp}) {
+  Widget _buildMotorPad(PlayMarketState state, PlayMarketViewModel notifier,
+      {required bool isSp}) {
     final selectedStr = state.selectedNumber ?? '';
     final count = selectedStr.length;
     final factor = isSp
@@ -694,7 +775,6 @@ class PlayMarketScreen extends ConsumerWidget {
           ),
         ],
         const SizedBox(height: 14),
-
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -789,14 +869,12 @@ class PlayMarketScreen extends ConsumerWidget {
           },
         ),
         const SizedBox(height: 20),
-
         const Text(
           '2. Select Panna Categories:',
           style: TextStyle(
               fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         const SizedBox(height: 10),
-
         Row(
           children: [
             Expanded(
@@ -841,9 +919,7 @@ class PlayMarketScreen extends ConsumerWidget {
           color: isSelected ? AppColors.primaryGold : const Color(0xFF1F2937),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected
-                ? AppColors.primaryGold
-                : const Color(0xFF374151),
+            color: isSelected ? AppColors.primaryGold : const Color(0xFF374151),
           ),
         ),
         alignment: Alignment.center,
@@ -892,7 +968,6 @@ class PlayMarketScreen extends ConsumerWidget {
           onChanged: (val) => notifier.setFamilyPanna(val),
         ),
         const SizedBox(height: 16),
-
         if (familyList.isNotEmpty) ...[
           Text(
             'Generated Family Pannas (${familyList.length} total):',
@@ -907,7 +982,8 @@ class PlayMarketScreen extends ConsumerWidget {
             runSpacing: 8,
             children: familyList.map((panna) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1F2937),
                   borderRadius: BorderRadius.circular(8),
@@ -965,7 +1041,6 @@ class PlayMarketScreen extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 20),
-
         Row(
           children: [
             Expanded(
@@ -1065,7 +1140,6 @@ class PlayMarketScreen extends ConsumerWidget {
               fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         const SizedBox(height: 14),
-
         Row(
           children: [
             Expanded(
@@ -1164,9 +1238,7 @@ class PlayMarketScreen extends ConsumerWidget {
           TextField(
             keyboardType: TextInputType.number,
             style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white),
+                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
             decoration: InputDecoration(
               prefixText: '₹ ',
               prefixStyle: const TextStyle(
@@ -1317,7 +1389,8 @@ class PlayMarketScreen extends ConsumerWidget {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 20),
                       onPressed: () => Navigator.pop(dialogContext),
                     ),
                   ],

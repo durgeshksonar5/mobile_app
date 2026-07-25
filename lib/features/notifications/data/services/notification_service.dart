@@ -17,10 +17,12 @@ class NotificationService {
   void _initializeListeners() {
     // 1. Listen for foreground notifications
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint('Received foreground notification: ${message.notification?.title}');
+      debugPrint(
+          'Received foreground notification: ${message.notification?.title}');
       if (message.notification != null) {
         // Log notification details. Future enhancement can trigger toast/banner UI here.
-        debugPrint('Foreground Notification Body: ${message.notification?.body}');
+        debugPrint(
+            'Foreground Notification Body: ${message.notification?.body}');
       }
     });
 
@@ -44,7 +46,8 @@ class NotificationService {
         badge: true,
         sound: true,
       );
-      debugPrint('User push notifications permission authorizationStatus: ${settings.authorizationStatus}');
+      debugPrint(
+          'User push notifications permission authorizationStatus: ${settings.authorizationStatus}');
     } catch (e) {
       debugPrint('Error requesting notification permissions: $e');
     }
@@ -81,7 +84,7 @@ class NotificationService {
   Future<void> _syncTokenWithBackend(String token) async {
     try {
       String platform = Platform.isAndroid ? "android" : "ios";
-      
+
       final response = await _apiClient.dio.post(
         '/notifications/device-tokens/',
         data: {
@@ -94,7 +97,8 @@ class NotificationService {
       if (response.statusCode == 201 || response.statusCode == 200) {
         debugPrint("Device token successfully synced with Django backend.");
       } else {
-        debugPrint("Failed to sync device token. Status Code: ${response.statusCode}, Body: ${response.data}");
+        debugPrint(
+            "Failed to sync device token. Status Code: ${response.statusCode}, Body: ${response.data}");
       }
     } catch (e) {
       debugPrint("Error syncing FCM token with Django backend: $e");

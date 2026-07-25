@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/dependency_injection/providers.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
+import '../../../wallet/presentation/view_models/wallet_view_model.dart';
+
+import '../../../../core/services/external_link_service.dart';
 
 class AddFundDialog extends ConsumerStatefulWidget {
   const AddFundDialog({super.key});
@@ -34,19 +37,29 @@ class _AddFundDialogState extends ConsumerState<AddFundDialog> {
     try {
       final repo = ref.read(resultsRepositoryProvider);
       await repo.createDepositRequest(amt);
+      ref.read(walletViewModelProvider.notifier).fetchBalance(isRefresh: true);
+      ExternalLinkService.launchWhatsApp(
+        customMessage:
+            'Hi Admin, I have submitted an Add Fund deposit request of ₹$amt on King Win app.',
+      );
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(
-                  'Deposit request of ₹$amt submitted successfully! Please wait for admin approval.')),
+            backgroundColor: AppColors.statusGreen,
+            content: Text(
+                'Add fund request of ₹$amt submitted successfully! Admin will approve it shortly.'),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            backgroundColor: AppColors.statusRed,
+            content: Text('Failed to submit deposit request: $e'),
+          ),
         );
       }
     }

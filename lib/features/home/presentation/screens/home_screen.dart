@@ -18,51 +18,125 @@ import '../widgets/withdraw_dialog.dart';
 import '../widgets/notifications_dialog.dart';
 import '../../domain/models/app_notification.dart';
 import '../../../contact_sync/presentation/widgets/contact_disclosure.dart';
+import '../../../wallet/presentation/view_models/wallet_view_model.dart';
 import '../../../../app/dependency_injection/providers.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  final bool initialPermissionSkipped;
+  const HomeScreen({super.key, this.initialPermissionSkipped = false});
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _passbookFilter = 'all'; // 'all', 'deposit', 'withdraw'
   List<AppNotification> _notifications =
       AppNotification.getInitialSampleNotifications();
   PermissionStatus? _permissionStatus;
-  bool _isPermissionSkipped = false;
+  late bool _isPermissionSkipped;
   bool _isSyncing = false;
+
+  final TextEditingController _bankNameController = TextEditingController();
+  final TextEditingController _accNumController = TextEditingController();
+  final TextEditingController _ifscController = TextEditingController();
+  final TextEditingController _upiIdController = TextEditingController();
+  final TextEditingController _upiNumController = TextEditingController();
+  bool _isSavingSettings = false;
+  bool _controllersInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    _isPermissionSkipped = widget.initialPermissionSkipped;
+    if (_isPermissionSkipped) {
+      _permissionStatus = PermissionStatus.granted;
+    }
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndRequestPermission();
+      ref.read(walletViewModelProvider.notifier).fetchBalance();
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _bankNameController.dispose();
+    _accNumController.dispose();
+    _ifscController.dispose();
+    _upiIdController.dispose();
+    _upiNumController.dispose();
     super.dispose();
+  }
+
+  void _syncSettingsControllers(dynamic user) {
+    if (user != null && !_controllersInitialized) {
+      _bankNameController.text = user.bankName ?? '';
+      _accNumController.text = user.accountNumber ?? '';
+      _ifscController.text = user.ifscCode ?? '';
+      _upiIdController.text = user.upiId ?? '';
+      _upiNumController.text = user.upiNumber ?? '';
+      _controllersInitialized = true;
+    }
+  }
+
+  void _saveSettingsFromView() async {
+    setState(() => _isSavingSettings = true);
+    try {
+      final success =
+          await ref.read(authViewModelProvider.notifier).updateProfile({
+        'bank_name': _bankNameController.text.trim(),
+        'account_number': _accNumController.text.trim(),
+        'ifsc_code': _ifscController.text.trim().toUpperCase(),
+        'upi_id': _upiIdController.text.trim(),
+        'upi_number': _upiNumController.text.trim(),
+      });
+      if (mounted) {
+        setState(() => _isSavingSettings = false);
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              backgroundColor: AppColors.statusGreen,
+              content: Text('Settings & banking details saved successfully!'),
+            ),
+          );
+        } else {
+          final err = ref.read(authViewModelProvider).error;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors.statusRed,
+              content: Text(err ?? 'Failed to save settings.'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSavingSettings = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkAndRequestPermission(isResume: true);
+      ref.read(walletViewModelProvider.notifier).fetchBalance(isRefresh: true);
     }
   }
 
   Future<void> _checkAndRequestPermission({bool isResume = false}) async {
     try {
       final status = await Permission.contacts.status;
-      debugPrint('Contacts permission status checked: $status (isResume: $isResume)');
+      debugPrint(
+          'Contacts permission status checked: $status (isResume: $isResume)');
 
       if (status.isGranted || status.isLimited) {
         setState(() {
@@ -80,21 +154,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         return;
       }
 
+      setState(() {
+        _permissionStatus = status;
+      });
+
       if (status.isDenied) {
         // Present Google Play compliant prominent disclosure dialog before native system dialog
-        if (mounted) {
+        if (mounted && !_isPermissionSkipped) {
           _showDisclosureDialog();
         }
-      } else {
-        // Restricted or permanently denied
-        setState(() {
-          _permissionStatus = status;
-        });
       }
     } catch (e) {
       debugPrint('Error checking/requesting contacts permission: $e');
       setState(() {
-        _permissionStatus = PermissionStatus.denied;
+        _permissionStatus = PermissionStatus.granted;
       });
     }
   }
@@ -177,8 +250,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   }
 
   Widget _buildPermissionBlockingScreen() {
-    final isPermanentlyDenied = _permissionStatus == PermissionStatus.permanentlyDenied ||
-        _permissionStatus == PermissionStatus.restricted;
+    final isPermanentlyDenied =
+        _permissionStatus == PermissionStatus.permanentlyDenied ||
+            _permissionStatus == PermissionStatus.restricted;
 
     return Stack(
       children: [
@@ -187,7 +261,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           body: SafeArea(
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.p24, vertical: AppSpacing.p32),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.p24, vertical: AppSpacing.p32),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -196,12 +271,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.p24),
                     decoration: BoxDecoration(
-                      color: isPermanentlyDenied ? AppColors.statusRedBg : AppColors.primaryGoldBg,
+                      color: isPermanentlyDenied
+                          ? AppColors.statusRedBg
+                          : AppColors.primaryGoldBg,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       isPermanentlyDenied ? Icons.gpp_maybe : Icons.contacts,
-                      color: isPermanentlyDenied ? AppColors.statusRed : AppColors.primaryGold,
+                      color: isPermanentlyDenied
+                          ? AppColors.statusRed
+                          : AppColors.primaryGold,
                       size: 80,
                     ),
                   ),
@@ -237,7 +316,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                         },
                         child: const Text(
                           'Open Settings',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -252,7 +332,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                         ),
                         child: const Text(
                           'Retry Check',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textSecondary),
                         ),
                       ),
                     ),
@@ -264,7 +347,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                         onPressed: () => _checkAndRequestPermission(),
                         child: const Text(
                           'Grant Permission',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -274,7 +358,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     onPressed: () {
                       ref.read(authViewModelProvider.notifier).logout();
                     },
-                    icon: const Icon(Icons.logout, color: AppColors.statusRed, size: 18),
+                    icon: const Icon(Icons.logout,
+                        color: AppColors.statusRed, size: 18),
                     label: const Text(
                       'Switch Account / Logout',
                       style: TextStyle(
@@ -316,7 +401,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   ),
                 ),
                 SizedBox(width: 4),
-                Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.textSecondary),
+                Icon(Icons.arrow_forward_ios,
+                    size: 12, color: AppColors.textSecondary),
               ],
             ),
           ),
@@ -365,43 +451,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         ),
         title: const Text(
           'King Win',
-          style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         actions: [
           // Wallet Balance Pill
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceGold,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.account_balance_wallet,
-                    size: 16, color: AppColors.darkGold),
-                const SizedBox(width: 6),
-                Text(
-                  '${user?.walletBalance ?? 0}',
-                  style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary),
+          Consumer(
+            builder: (context, ref, child) {
+              final walletState = ref.watch(walletViewModelProvider);
+              final user = ref.watch(authViewModelProvider).user;
+              final balanceVal = walletState.isLoaded
+                  ? walletState.displayBalance
+                  : (user?.walletBalance ?? 0);
+
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceGold,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+                  border: Border.all(color: AppColors.border),
                 ),
-              ],
-            ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.account_balance_wallet,
+                        size: 16, color: AppColors.darkGold),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$balanceVal',
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           const SizedBox(width: 8),
 
           // Refresh Button
           IconButton(
-            icon:
-                const Icon(Icons.refresh, size: 20),
+            icon: const Icon(Icons.refresh, size: 20),
             onPressed: () {
               homeNotifier.fetchMarkets();
               ref.read(authViewModelProvider.notifier).checkInitialSession();
+              ref
+                  .read(walletViewModelProvider.notifier)
+                  .fetchBalance(isRefresh: true);
             },
           ),
 
@@ -1129,51 +1226,442 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  Widget _buildSettingsView(BuildContext context, user) {
+  Widget _buildSettingsView(BuildContext context, dynamic user) {
+    _syncSettingsControllers(user);
+
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.p16),
       children: [
+        // Header Section Title Banner
         Container(
-          padding: const EdgeInsets.all(20),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: AppColors.surfaceWhite,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            color: const Color(0xFFFFF9E8),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.borderLight),
           ),
-          child: Column(
+          child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('SETTINGS & PROFILE',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text('Full Name'),
-                subtitle: Text(user?.name ?? 'User'),
+              Text(
+                'Settings & Profile',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textDark,
+                ),
               ),
-              ListTile(
-                leading: const Icon(Icons.phone_android),
-                title: const Text('Phone Number'),
-                subtitle: Text(user?.phoneNumber ?? 'No Phone'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.account_balance),
-                title: const Text('Bank Name'),
-                subtitle: Text(user?.bankName ?? 'Not Configured'),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.sync, color: AppColors.primaryGold),
-                title: const Text('Sync Contacts'),
-                subtitle: const Text('Synchronize contacts with backend API'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.textSecondary),
-                onTap: () {
-                  context.push('/contacts-sync');
-                },
+              SizedBox(height: 4),
+              Text(
+                'Update your profile, banking details, and UPI accounts',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),
         ),
+        const SizedBox(height: 14),
+
+        // Card Container Form
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceWhite,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.borderLight),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x08000000),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // FULL NAME
+              const Text(
+                'FULL NAME',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textDark,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Text(
+                  (user?.name != null && (user.name as String).isNotEmpty)
+                      ? (user.name as String).toUpperCase()
+                      : 'DURGESH KISHOR SONAR',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              const SizedBox(height: 18),
+
+              // Bank Account Information Header
+              const Text(
+                'Bank Account Information',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textDark,
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Row 1: BANK NAME & IFSC CODE
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'BANK NAME',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: _bankNameController,
+                          decoration: InputDecoration(
+                            hintText: 'SBI, HDFC etc.',
+                            hintStyle: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textMuted,
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primaryGold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'IFSC CODE',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: _ifscController,
+                          textCapitalization: TextCapitalization.characters,
+                          decoration: InputDecoration(
+                            hintText: 'SBIN0012345',
+                            hintStyle: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textMuted,
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primaryGold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // ACCOUNT NUMBER
+              const Text(
+                'ACCOUNT NUMBER',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textDark,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _accNumController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: 'Enter bank account number',
+                  hintStyle: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: AppColors.primaryGold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              const SizedBox(height: 20),
+
+              // UPI Account Information Header
+              const Text(
+                'UPI Account Information',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textDark,
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Row 2: UPI ID (VPA) & UPI PHONE NUMBER
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'UPI ID (VPA)',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: _upiIdController,
+                          decoration: InputDecoration(
+                            hintText: 'username@okaxis',
+                            hintStyle: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textMuted,
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primaryGold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'UPI PHONE NUMBER',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: _upiNumController,
+                          keyboardType: TextInputType.phone,
+                          decoration: InputDecoration(
+                            hintText: '10-digit UPI phone',
+                            hintStyle: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textMuted,
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primaryGold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Save Settings Button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E2433),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 0,
+                  ),
+                  onPressed: _isSavingSettings ? null : _saveSettingsFromView,
+                  child: _isSavingSettings
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Save Settings',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Sync Contacts Card
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceWhite,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: AppColors.primaryGoldBg,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.sync,
+                  color: AppColors.primaryGold, size: 20),
+            ),
+            title: const Text(
+              'Sync Contacts',
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark),
+            ),
+            subtitle: const Text(
+              'Synchronize contacts with backend API',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios,
+                size: 14, color: AppColors.textSecondary),
+            onTap: () {
+              context.push('/contacts-sync');
+            },
+          ),
+        ),
+        const SizedBox(height: 20),
       ],
     );
   }

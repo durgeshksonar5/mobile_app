@@ -18,7 +18,7 @@ void main() {
 
     test('ThemeData mapping aligns with light theme design tokens', () {
       final theme = AppTheme.lightTheme;
-      
+
       // Scaffold Background
       expect(theme.scaffoldBackgroundColor, AppColors.background);
 
@@ -32,12 +32,15 @@ void main() {
       expect(theme.colorScheme.error, AppColors.statusRed);
 
       // Input Decoration Theme
-      final focusedBorder = theme.inputDecorationTheme.focusedBorder as OutlineInputBorder;
+      final focusedBorder =
+          theme.inputDecorationTheme.focusedBorder as OutlineInputBorder;
       expect(focusedBorder.borderSide.color, AppColors.darkGold);
 
       // Bottom Navigation Bar Theme
-      expect(theme.bottomNavigationBarTheme.selectedItemColor, AppColors.darkGold);
-      expect(theme.bottomNavigationBarTheme.unselectedItemColor, AppColors.textMuted);
+      expect(
+          theme.bottomNavigationBarTheme.selectedItemColor, AppColors.darkGold);
+      expect(theme.bottomNavigationBarTheme.unselectedItemColor,
+          AppColors.textMuted);
     });
   });
 }

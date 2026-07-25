@@ -4,18 +4,21 @@ import '../../../home/data/repositories/results_repository.dart';
 import '../states/play_market_state.dart';
 import '../../../../core/utils/panna_generator.dart';
 
+import '../../../wallet/presentation/view_models/wallet_view_model.dart';
+
 final playMarketViewModelProvider =
     StateNotifierProvider.family<PlayMarketViewModel, PlayMarketState, String>(
         (ref, marketName) {
   final repository = ref.watch(resultsRepositoryProvider);
-  return PlayMarketViewModel(repository, marketName);
+  return PlayMarketViewModel(repository, marketName, ref);
 });
 
 class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
   final ResultsRepository _repository;
   final String marketName;
+  final Ref _ref;
 
-  PlayMarketViewModel(this._repository, this.marketName)
+  PlayMarketViewModel(this._repository, this.marketName, this._ref)
       : super(const PlayMarketState()) {
     checkMarketStatus();
   }
@@ -195,6 +198,7 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
           amount: amt,
         );
       }
+      _ref.read(walletViewModelProvider.notifier).fetchBalance(isRefresh: true);
       state = state.copyWith(isLoading: false, activeGame: 'list');
       return true;
     } catch (e) {

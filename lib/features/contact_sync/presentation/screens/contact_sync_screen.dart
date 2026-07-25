@@ -24,7 +24,9 @@ class _ContactSyncScreenState extends ConsumerState<ContactSyncScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = ref.read(authViewModelProvider).user;
       final userId = user?.id ?? 0;
-      ref.read(contactSyncViewModelProvider.notifier).checkConsentAndPermission(userId: userId);
+      ref
+          .read(contactSyncViewModelProvider.notifier)
+          .checkConsentAndPermission(userId: userId);
     });
   }
 
@@ -170,7 +172,8 @@ class _ContactSyncScreenState extends ConsumerState<ContactSyncScreen> {
       case ContactSyncStep.failure:
         return ContactSyncProgressScreen(
           progress: 0.0,
-          statusText: 'Sync failed: ${syncState.errorMessage ?? "Unknown error occurred"}',
+          statusText:
+              'Sync failed: ${syncState.errorMessage ?? "Unknown error occurred"}',
           onDone: () => context.pop(),
         );
 

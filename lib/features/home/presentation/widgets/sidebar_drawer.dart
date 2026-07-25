@@ -170,9 +170,8 @@ class _SidebarDrawerState extends ConsumerState<SidebarDrawer> {
                           borderRadius:
                               BorderRadius.circular(AppSpacing.radiusMd),
                         ),
-                        tileColor: isActive
-                            ? AppColors.softGold
-                            : Colors.transparent,
+                        tileColor:
+                            isActive ? AppColors.softGold : Colors.transparent,
                         leading: Icon(
                           icon,
                           size: 20,
