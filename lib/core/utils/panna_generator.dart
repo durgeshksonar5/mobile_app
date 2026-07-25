@@ -73,4 +73,21 @@ class PannaGenerator {
     const factors = {4: 12, 5: 20, 6: 30, 7: 42, 8: 56, 9: 72, 10: 90};
     return factors[uniqueDigitsCount] ?? 1;
   }
+
+  static List<String> getSpDpTpPannas(int ank, List<String> categories) {
+    final List<String> pannas = [];
+    if (categories.contains('SP')) {
+      final spMap = generatePannas('single-panna');
+      pannas.addAll(spMap[ank] ?? []);
+    }
+    if (categories.contains('DP')) {
+      final dpMap = generatePannas('double-panna');
+      pannas.addAll(dpMap[ank] ?? []);
+    }
+    if (categories.contains('TP')) {
+      final tpMap = generatePannas('triple-panna');
+      pannas.addAll(tpMap[ank] ?? []);
+    }
+    return pannas;
+  }
 }

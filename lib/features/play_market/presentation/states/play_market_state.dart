@@ -1,7 +1,8 @@
+import '../../../../core/utils/panna_generator.dart';
+
 class PlayMarketState {
   final bool isLoading;
-  final String
-      activeGame; // 'list', 'single', 'jodi', 'single-panna', 'double-panna', 'triple-panna', 'sp-motor', 'dp-motor', 'sp-dp-tp', 'half-sagam', 'full-sagam', 'family-panel'
+  final String activeGame; // 'list', 'single', 'jodi', 'single-panna', 'double-panna', 'triple-panna', 'sp-motor', 'dp-motor', 'sp-dp-tp', 'half-sagam', 'full-sagam', 'family-panel'
   final String session; // 'open' or 'close'
   final bool openDisabled;
   final String? selectedNumber;
@@ -9,8 +10,9 @@ class PlayMarketState {
   final String amount;
   final int selectedAnk; // 0-9 or -1 for 'All'
   final String searchQuery;
+  final int spDpTpAnk; // 0-9 base digit for SP DP TP
   final List<String> spDpTpChoices;
-  final String halfSangamType;
+  final String halfSangamType; // 'open_panna_close_digit' or 'open_digit_close_panna'
   final String halfPanna;
   final String halfDigit;
   final String fullOpenPanna;
@@ -28,6 +30,7 @@ class PlayMarketState {
     this.amount = '',
     this.selectedAnk = -1,
     this.searchQuery = '',
+    this.spDpTpAnk = 0,
     this.spDpTpChoices = const ['SP'],
     this.halfSangamType = 'open_panna_close_digit',
     this.halfPanna = '',
@@ -37,6 +40,35 @@ class PlayMarketState {
     this.familyPanna = '',
     this.error,
   });
+
+  int get multiplier {
+    if (activeGame == 'single' ||
+        activeGame == 'jodi' ||
+        activeGame == 'single-panna' ||
+        activeGame == 'double-panna' ||
+        activeGame == 'triple-panna') {
+      return selectedNumbers.length;
+    } else if (activeGame == 'sp-motor') {
+      final len = (selectedNumber ?? '').length;
+      if (len < 4) return 0;
+      return PannaGenerator.getSpMotorFactor(len);
+    } else if (activeGame == 'dp-motor') {
+      final len = (selectedNumber ?? '').length;
+      if (len < 4) return 0;
+      return PannaGenerator.getDpMotorFactor(len);
+    } else if (activeGame == 'sp-dp-tp') {
+      return PannaGenerator.getSpDpTpPannas(spDpTpAnk, spDpTpChoices).length;
+    } else if (activeGame == 'family-panel') {
+      return PannaGenerator.getFamilyPannas(familyPanna).length;
+    } else if (activeGame == 'half-sagam') {
+      if (halfPanna.length == 3 && halfDigit.length == 1) return 1;
+      return 0;
+    } else if (activeGame == 'full-sagam') {
+      if (fullOpenPanna.length == 3 && fullClosePanna.length == 3) return 1;
+      return 0;
+    }
+    return 0;
+  }
 
   PlayMarketState copyWith({
     bool? isLoading,
@@ -48,6 +80,7 @@ class PlayMarketState {
     String? amount,
     int? selectedAnk,
     String? searchQuery,
+    int? spDpTpAnk,
     List<String>? spDpTpChoices,
     String? halfSangamType,
     String? halfPanna,
@@ -68,6 +101,7 @@ class PlayMarketState {
       amount: amount ?? this.amount,
       selectedAnk: selectedAnk ?? this.selectedAnk,
       searchQuery: searchQuery ?? this.searchQuery,
+      spDpTpAnk: spDpTpAnk ?? this.spDpTpAnk,
       spDpTpChoices: spDpTpChoices ?? this.spDpTpChoices,
       halfSangamType: halfSangamType ?? this.halfSangamType,
       halfPanna: halfPanna ?? this.halfPanna,
@@ -79,3 +113,4 @@ class PlayMarketState {
     );
   }
 }
+

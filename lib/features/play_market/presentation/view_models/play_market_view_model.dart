@@ -84,6 +84,20 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
     state = state.copyWith(amount: amt);
   }
 
+  void setSpDpTpAnk(int ank) {
+    state = state.copyWith(spDpTpAnk: ank);
+  }
+
+  void toggleSpDpTpChoice(String choice) {
+    final list = List<String>.from(state.spDpTpChoices);
+    if (list.contains(choice)) {
+      if (list.length > 1) list.remove(choice);
+    } else {
+      list.add(choice);
+    }
+    state = state.copyWith(spDpTpChoices: list);
+  }
+
   void setSelectedAnk(int ank) {
     state = state.copyWith(selectedAnk: ank);
   }
@@ -109,61 +123,76 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
   Future<bool> placeBet({required int walletBalance}) async {
     final amt = int.tryParse(state.amount.trim());
     if (amt == null || amt <= 0) {
-      state = state.copyWith(error: 'Please enter a valid amount.');
+      state = state.copyWith(error: 'Please enter a valid points amount.');
       return false;
     }
 
-    final isMultiSelect = [
-      'single',
-      'jodi',
-      'single-panna',
-      'double-panna',
-      'triple-panna',
-      'sp-dp-tp'
-    ].contains(state.activeGame);
-    if (isMultiSelect && state.selectedNumbers.isEmpty) {
-      state = state.copyWith(error: 'Please select at least one number.');
+    final mult = state.multiplier;
+    if (mult <= 0) {
+      if (state.activeGame == 'sp-motor' || state.activeGame == 'dp-motor') {
+        state = state.copyWith(
+            error: 'Please select a minimum of 4 unique digits.');
+      } else if (state.activeGame == 'family-panel') {
+        state = state.copyWith(
+            error: 'Please enter a valid 3-digit Panna for Family Panel.');
+      } else if (state.activeGame == 'half-sagam' ||
+          state.activeGame == 'full-sagam') {
+        state = state.copyWith(
+            error: 'Please complete all required Panna and Ank fields.');
+      } else {
+        state = state.copyWith(error: 'Please select at least one number.');
+      }
       return false;
     }
 
-    int factor = 1;
-    if (state.activeGame == 'sp-motor') {
-      final len = (state.selectedNumber ?? '').length;
-      if (len < 4 || len > 10) {
-        state = state.copyWith(
-            error: 'Please select between 4 and 10 digits for SP Motor.');
-        return false;
-      }
-      factor = PannaGenerator.getSpMotorFactor(len);
-    } else if (state.activeGame == 'dp-motor') {
-      final len = (state.selectedNumber ?? '').length;
-      if (len < 4 || len > 10) {
-        state = state.copyWith(
-            error: 'Please select between 4 and 10 digits for DP Motor.');
-        return false;
-      }
-      factor = PannaGenerator.getDpMotorFactor(len);
+    // 40 Pannas Limit check
+    if (['single-panna', 'double-panna', 'triple-panna']
+            .contains(state.activeGame) &&
+        state.selectedNumbers.length > 40) {
+      state = state.copyWith(
+          error:
+              'Maximum limit exceeded! You can select a maximum of 40 pannas per session.');
+      return false;
     }
 
-    final totalBet =
-        amt * factor * (isMultiSelect ? state.selectedNumbers.length : 1);
+    final totalBet = amt * mult;
     if (totalBet > walletBalance) {
       state = state.copyWith(
-          error: 'Insufficient balance! This bet requires ₹$totalBet.');
+          error: 'Insufficient balance! Total bid requires ₹$totalBet.');
       return false;
     }
 
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final targets =
-          isMultiSelect ? state.selectedNumbers : [state.selectedNumber ?? ''];
+      List<String> targets = [];
+      if (['single', 'jodi', 'single-panna', 'double-panna', 'triple-panna']
+          .contains(state.activeGame)) {
+        targets = state.selectedNumbers;
+      } else if (state.activeGame == 'sp-dp-tp') {
+        targets = PannaGenerator.getSpDpTpPannas(
+            state.spDpTpAnk, state.spDpTpChoices);
+      } else if (state.activeGame == 'family-panel') {
+        targets = PannaGenerator.getFamilyPannas(state.familyPanna);
+      } else if (state.activeGame == 'sp-motor' ||
+          state.activeGame == 'dp-motor') {
+        targets = [state.selectedNumber ?? ''];
+      } else if (state.activeGame == 'half-sagam') {
+        targets = [
+          state.halfSangamType == 'open_panna_close_digit'
+              ? '${state.halfPanna}-${state.halfDigit}'
+              : '${state.halfDigit}-${state.halfPanna}'
+        ];
+      } else if (state.activeGame == 'full-sagam') {
+        targets = ['${state.fullOpenPanna}-${state.fullClosePanna}'];
+      }
+
       for (final numStr in targets) {
         await _repository.placeBid(
           marketName: marketName,
           gameType: state.activeGame.replaceAll('-', ' ').toUpperCase(),
           session: state.session.toUpperCase(),
           selectedNumber: numStr,
-          amount: amt * factor,
+          amount: amt,
         );
       }
       state = state.copyWith(isLoading: false, activeGame: 'list');

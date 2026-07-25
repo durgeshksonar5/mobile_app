@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../view_models/play_market_view_model.dart';
+import '../states/play_market_state.dart';
 import '../../../../app/theme/app_colors.dart';
-import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/utils/panna_generator.dart';
 import '../../../auth/presentation/view_models/auth_view_model.dart';
 
@@ -21,11 +21,17 @@ class PlayMarketScreen extends ConsumerWidget {
     final authState = ref.watch(authViewModelProvider);
     final walletBalance = authState.user?.walletBalance ?? 0;
 
+    final gameTitle = state.activeGame == 'list'
+        ? decodedName.toUpperCase()
+        : '${state.activeGame.replaceAll('-', ' ').toUpperCase()} BETTING';
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: const Color(0xFF111827), // Clean dark canvas
       appBar: AppBar(
+        backgroundColor: const Color(0xFF1F2937),
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          icon: const Icon(Icons.arrow_back, color: AppColors.primaryGold),
           onPressed: () {
             if (state.activeGame != 'list') {
               notifier.selectGame('list');
@@ -34,110 +40,70 @@ class PlayMarketScreen extends ConsumerWidget {
             }
           },
         ),
-        backgroundColor: AppColors.surfaceWhite,
-        elevation: 1,
-        title: Text(
-          decodedName.toUpperCase(),
-          style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: AppColors.textDark),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              gameTitle,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              decodedName.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primaryGold,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history_rounded,
+                color: AppColors.primaryGold, size: 24),
+            tooltip: 'Bet History',
+            onPressed: () => _showHistoryDialog(context, decodedName),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: state.activeGame == 'list'
             ? _buildGameModesGrid(context, decodedName, notifier)
-            : _buildBettingForm(context, state, notifier, walletBalance),
+            : _buildBettingScreen(context, state, notifier, walletBalance),
       ),
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Game Modes Selection Grid
+  // ---------------------------------------------------------------------------
   Widget _buildGameModesGrid(
       BuildContext context, String marketName, PlayMarketViewModel notifier) {
     final gameModes = [
-      {
-        'id': 'single',
-        'name': 'Single',
-        'color': const Color(0xFFFEF2F2),
-        'border': const Color(0xFFFECACA),
-        'icon': Icons.crop_square
-      },
-      {
-        'id': 'jodi',
-        'name': 'Jodi',
-        'color': const Color(0xFFFAF5FF),
-        'border': const Color(0xFFE9D5FF),
-        'icon': Icons.grid_view
-      },
-      {
-        'id': 'single-panna',
-        'name': 'Single Panna',
-        'color': const Color(0xFFEFF6FF),
-        'border': const Color(0xFFBFDBFE),
-        'icon': Icons.description
-      },
-      {
-        'id': 'double-panna',
-        'name': 'Double Panna',
-        'color': const Color(0xFFECFDF5),
-        'border': const Color(0xFFA7F3D0),
-        'icon': Icons.content_copy
-      },
-      {
-        'id': 'triple-panna',
-        'name': 'Triple Panna',
-        'color': const Color(0xFFFFFBEB),
-        'border': const Color(0xFFFDE68A),
-        'icon': Icons.layers
-      },
-      {
-        'id': 'sp-motor',
-        'name': 'SP Motor',
-        'color': const Color(0xFFECFEFF),
-        'border': const Color(0xFFA5F3FC),
-        'icon': Icons.memory
-      },
-      {
-        'id': 'dp-motor',
-        'name': 'DP Motor',
-        'color': const Color(0xFFF0FDF4),
-        'border': const Color(0xFFBBF7D0),
-        'icon': Icons.album
-      },
-      {
-        'id': 'sp-dp-tp',
-        'name': 'SP DP TP',
-        'color': const Color(0xFFFFF7ED),
-        'border': const Color(0xFFFFEDD5),
-        'icon': Icons.grid_on
-      },
-      {
-        'id': 'family-panel',
-        'name': 'Family Panel',
-        'color': const Color(0xFFFFF1F2),
-        'border': const Color(0xFFFECDD3),
-        'icon': Icons.people
-      },
-      {
-        'id': 'half-sagam',
-        'name': 'Half Sangam',
-        'color': const Color(0xFFEEF2FF),
-        'border': const Color(0xFFC7D2FE),
-        'icon': Icons.call_split
-      },
-      {
-        'id': 'full-sagam',
-        'name': 'Full Sangam',
-        'color': const Color(0xFFFDF2F8),
-        'border': const Color(0xFFFBCFE8),
-        'icon': Icons.fullscreen
-      },
+      {'id': 'single', 'name': 'Single Ank', 'icon': Icons.filter_1},
+      {'id': 'jodi', 'name': 'Jodi', 'icon': Icons.grid_view},
+      {'id': 'single-panna', 'name': 'Single Panna', 'icon': Icons.description},
+      {'id': 'double-panna', 'name': 'Double Panna', 'icon': Icons.content_copy},
+      {'id': 'triple-panna', 'name': 'Triple Panna', 'icon': Icons.layers},
+      {'id': 'sp-motor', 'name': 'SP Motor', 'icon': Icons.memory},
+      {'id': 'dp-motor', 'name': 'DP Motor', 'icon': Icons.album},
+      {'id': 'sp-dp-tp', 'name': 'SP DP TP', 'icon': Icons.grid_on},
+      {'id': 'family-panel', 'name': 'Family Panel', 'icon': Icons.people},
+      {'id': 'half-sagam', 'name': 'Half Sangam', 'icon': Icons.call_split},
+      {'id': 'full-sagam', 'name': 'Full Sangam', 'icon': Icons.fullscreen},
     ];
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.p16),
+      padding: const EdgeInsets.all(16),
       children: [
-        // Header Banner Card
+        // Premium Header Banner
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -148,67 +114,80 @@ class PlayMarketScreen extends ConsumerWidget {
                 Color(0xFFC58514),
               ],
             ),
-            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('SELECT GAME MODE',
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary)),
-              const SizedBox(height: 4),
-              Text(marketName.toUpperCase(),
-                  style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.textPrimary)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('SELECT GAME MODE',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                          letterSpacing: 1.0)),
+                  const SizedBox(height: 4),
+                  Text(marketName.toUpperCase(),
+                      style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary)),
+                ],
+              ),
+              const Icon(Icons.casino, size: 40, color: AppColors.textPrimary),
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 1.3,
+            childAspectRatio: 1.35,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
           ),
           itemCount: gameModes.length,
           itemBuilder: (context, index) {
             final mode = gameModes[index];
-            final Color color = mode['color'] as Color;
-            final Color border = mode['border'] as Color;
             final IconData icon = mode['icon'] as IconData;
             final String id = mode['id'] as String;
             final String name = mode['name'] as String;
 
             return InkWell(
               onTap: () => notifier.selectGame(id),
-              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+              borderRadius: BorderRadius.circular(14),
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                  border: Border.all(color: border),
+                  color: const Color(0xFF1F2937),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF374151)),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, size: 30, color: AppColors.primaryGold),
-                    const SizedBox(height: 8),
+                    Icon(icon, size: 32, color: AppColors.primaryGold),
+                    const SizedBox(height: 10),
                     Text(
                       name,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textDark),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ],
                 ),
@@ -220,298 +199,1152 @@ class PlayMarketScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBettingForm(
+  // ---------------------------------------------------------------------------
+  // Complete Betting Screen Layout
+  // ---------------------------------------------------------------------------
+  Widget _buildBettingScreen(
     BuildContext context,
-    state,
+    PlayMarketState state,
     PlayMarketViewModel notifier,
     int walletBalance,
   ) {
     return Column(
       children: [
-        // Subheader Game Title
+        // 1. Wallet Balance & Session Bar
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          color: AppColors.surfaceWhite,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          color: const Color(0xFF1F2937),
+          child: Column(
             children: [
-              Text(
-                state.activeGame.replaceAll('-', ' ').toUpperCase(),
-                style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.textDark),
-              ),
+              // Wallet Row
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  ChoiceChip(
-                    label: const Text('OPEN'),
-                    selected: state.session == 'open',
-                    onSelected: state.openDisabled
-                        ? null
-                        : (_) => notifier.setSession('open'),
-                  ),
-                  const SizedBox(width: 6),
-                  ChoiceChip(
-                    label: const Text('CLOSE'),
-                    selected: state.session == 'close',
-                    onSelected: (_) => notifier.setSession('close'),
+                  Row(
+                    children: [
+                      const Icon(Icons.account_balance_wallet,
+                          color: AppColors.primaryGold, size: 20),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Wallet Balance:',
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF9CA3AF),
+                            fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '₹${walletBalance.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+                        style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryGold),
+                      ),
+                    ],
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+
+              // Session Selector Row (Hidden / Locked for Jodi)
+              if (state.activeGame == 'jodi')
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF111827),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF374151)),
+                  ),
+                  child: const Text(
+                    '🔒 Session Locked: Jodi applies to both Open & Close results',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryGold),
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              else
+                Row(
+                  children: [
+                    const Text(
+                      'Choose Session:',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildSessionButton(
+                              label: state.openDisabled
+                                  ? 'OPEN (Closed)'
+                                  : 'OPEN',
+                              isSelected: state.session == 'open',
+                              isDisabled: state.openDisabled,
+                              onTap: () => notifier.setSession('open'),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildSessionButton(
+                              label: 'CLOSE',
+                              isSelected: state.session == 'close',
+                              isDisabled: false,
+                              onTap: () => notifier.setSession('close'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
-        const Divider(height: 1),
 
-        // Number Grid / Input Area
+        // 2. Custom Game Mode Input Pad Area
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.p16),
-            child: _buildNumberSelectionArea(state, notifier),
+            padding: const EdgeInsets.all(16),
+            child: _buildGameInputPad(context, state, notifier),
           ),
         ),
 
-        // Amount Input & Place Bet Bar
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: const BoxDecoration(
-            color: AppColors.surfaceWhite,
-            border: Border(top: BorderSide(color: AppColors.borderLight)),
+        // 3. Bottom Betting Inputs & Cost Estimator Bar
+        _buildBottomBettingBar(context, state, notifier, walletBalance),
+      ],
+    );
+  }
+
+  Widget _buildSessionButton({
+    required String label,
+    required bool isSelected,
+    required bool isDisabled,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: isDisabled ? null : onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryGold
+              : (isDisabled ? const Color(0xFF374151) : const Color(0xFF111827)),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryGold
+                : (isDisabled ? Colors.transparent : const Color(0xFF4B5563)),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                keyboardType: TextInputType.number,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                decoration: const InputDecoration(
-                  prefixText: '₹ ',
-                  hintText: 'Enter bet amount per item',
-                ),
-                onChanged: (val) => notifier.setAmount(val),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: state.isLoading
-                      ? null
-                      : () async {
-                          final ok = await notifier.placeBet(
-                              walletBalance: walletBalance);
-                          if (context.mounted && ok) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Bet placed successfully!')),
-                            );
-                          }
-                        },
-                  child: state.isLoading
-                      ? const CircularProgressIndicator(
-                          color: AppColors.textPrimary)
-                      : const Text('PLACE BET NOW',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: isSelected
+                ? AppColors.textPrimary
+                : (isDisabled ? const Color(0xFF9CA3AF) : Colors.white),
           ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Custom Game Input Pads Switcher
+  // ---------------------------------------------------------------------------
+  Widget _buildGameInputPad(
+      BuildContext context, PlayMarketState state, PlayMarketViewModel notifier) {
+    switch (state.activeGame) {
+      case 'single':
+        return _buildSingleAnkPad(state, notifier);
+      case 'jodi':
+        return _buildJodiPad(state, notifier);
+      case 'single-panna':
+      case 'double-panna':
+      case 'triple-panna':
+        return _buildPannaPad(state, notifier);
+      case 'sp-motor':
+        return _buildMotorPad(state, notifier, isSp: true);
+      case 'dp-motor':
+        return _buildMotorPad(state, notifier, isSp: false);
+      case 'sp-dp-tp':
+        return _buildSpDpTpPad(state, notifier);
+      case 'family-panel':
+        return _buildFamilyPanelPad(state, notifier);
+      case 'half-sagam':
+        return _buildHalfSangamPad(state, notifier);
+      case 'full-sagam':
+        return _buildFullSangamPad(state, notifier);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  // 2.1 Single Ank Pad (0-9 Circular Grid)
+  Widget _buildSingleAnkPad(PlayMarketState state, PlayMarketViewModel notifier) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Select Single Digits (0 to 9):',
+          style: TextStyle(
+              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        const SizedBox(height: 14),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+          ),
+          itemCount: 10,
+          itemBuilder: (context, index) {
+            final digitStr = index.toString();
+            final isSelected = state.selectedNumbers.contains(digitStr);
+            return GestureDetector(
+              onTap: () => notifier.toggleSelectedNumber(digitStr),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSelected
+                      ? AppColors.primaryGold
+                      : const Color(0xFF1F2937),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primaryGold
+                        : const Color(0xFF374151),
+                    width: 2,
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  digitStr,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: isSelected ? AppColors.textPrimary : Colors.white,
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ],
     );
   }
 
-  Widget _buildNumberSelectionArea(state, PlayMarketViewModel notifier) {
-    if (state.activeGame == 'single') {
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 5,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
+  // 2.2 Jodi Pad (00-99 Scrollable 10-column Grid)
+  Widget _buildJodiPad(PlayMarketState state, PlayMarketViewModel notifier) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Select Jodi Numbers (00 to 99):',
+          style: TextStyle(
+              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        itemCount: 10,
-        itemBuilder: (context, index) {
-          final str = index.toString();
-          final isSelected = state.selectedNumbers.contains(str);
-          return InkWell(
-            onTap: () => notifier.toggleSelectedNumber(str),
-            child: Container(
-              decoration: BoxDecoration(
-                color:
-                    isSelected ? AppColors.primaryGold : AppColors.surfaceWhite,
-                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                border: Border.all(
+        const SizedBox(height: 14),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 1.2,
+          ),
+          itemCount: 100,
+          itemBuilder: (context, index) {
+            final jodiStr = index.toString().padLeft(2, '0');
+            final isSelected = state.selectedNumbers.contains(jodiStr);
+            return GestureDetector(
+              onTap: () => notifier.toggleSelectedNumber(jodiStr),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primaryGold
+                      : const Color(0xFF1F2937),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
                     color: isSelected
                         ? AppColors.primaryGold
-                        : AppColors.borderLight),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                str,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? AppColors.textPrimary : AppColors.textDark,
+                        : const Color(0xFF374151),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  jodiStr,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? AppColors.textPrimary : Colors.white,
+                  ),
                 ),
               ),
-            ),
-          );
-        },
-      );
-    } else if (state.activeGame == 'jodi') {
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 5,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
+            );
+          },
         ),
-        itemCount: 100,
-        itemBuilder: (context, index) {
-          final str = index.toString().padLeft(2, '0');
-          final isSelected = state.selectedNumbers.contains(str);
-          return InkWell(
-            onTap: () => notifier.toggleSelectedNumber(str),
-            child: Container(
-              decoration: BoxDecoration(
-                color:
-                    isSelected ? AppColors.primaryGold : AppColors.surfaceWhite,
-                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                border: Border.all(
-                    color: isSelected
-                        ? AppColors.primaryGold
-                        : AppColors.borderLight),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                str,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? AppColors.textPrimary : AppColors.textDark,
-                ),
-              ),
-            ),
-          );
-        },
-      );
-    } else if (state.activeGame == 'single-panna' ||
-        state.activeGame == 'double-panna' ||
-        state.activeGame == 'triple-panna') {
-      final pannasMap = PannaGenerator.generatePannas(state.activeGame);
-      final List<String> list = state.selectedAnk == -1
-          ? pannasMap.values.expand((element) => element).toList()
-          : (pannasMap[state.selectedAnk] ?? []);
+      ],
+    );
+  }
 
-      return Column(
-        children: [
-          // Ank Filters
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                ChoiceChip(
-                  label: const Text('ALL'),
-                  selected: state.selectedAnk == -1,
-                  onSelected: (_) => notifier.setSelectedAnk(-1),
+  // 2.3 Panna Pad (Single / Double / Triple Panna with Ank Sum filter & Search)
+  Widget _buildPannaPad(PlayMarketState state, PlayMarketViewModel notifier) {
+    final pannasMap = PannaGenerator.generatePannas(state.activeGame);
+    List<String> list = state.selectedAnk == -1
+        ? pannasMap.values.expand((element) => element).toList()
+        : (pannasMap[state.selectedAnk] ?? []);
+
+    if (state.searchQuery.isNotEmpty) {
+      list = list.where((p) => p.contains(state.searchQuery)).toList();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Max 40 Pannas Disclaimer Box
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF78350F), // Dark amber warning
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFF59E0B)),
+          ),
+          child: Row(
+            children: const [
+              Icon(Icons.info_outline, color: Color(0xFFFDE68A), size: 20),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Every user can play a maximum of 40 pannas combined per session for each market.',
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFFEF3C7)),
                 ),
-                ...List.generate(10, (i) => i).map((i) {
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 4.0),
-                    child: ChoiceChip(
-                      label: Text('$i'),
-                      selected: state.selectedAnk == i,
-                      onSelected: (_) => notifier.setSelectedAnk(i),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Search Bar
+        TextField(
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          decoration: InputDecoration(
+            hintText: 'Type 3-digit Panna (e.g. 123)...',
+            hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+            prefixIcon:
+                const Icon(Icons.search, color: AppColors.primaryGold, size: 20),
+            filled: true,
+            fillColor: const Color(0xFF1F2937),
+            contentPadding: const EdgeInsets.symmetric(vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFF374151)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFF374151)),
+            ),
+          ),
+          onChanged: (q) => notifier.setSearchQuery(q),
+        ),
+        const SizedBox(height: 14),
+
+        // Ank Sum Filter Chips
+        const Text(
+          'Filter by Ank Sum:',
+          style: TextStyle(
+              fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _buildAnkFilterChip('ALL', -1, state.selectedAnk == -1,
+                  () => notifier.setSelectedAnk(-1)),
+              ...List.generate(10, (i) => i).map((i) {
+                return _buildAnkFilterChip('$i', i, state.selectedAnk == i,
+                    () => notifier.setSelectedAnk(i));
+              }),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Panna Grid
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 1.8,
+          ),
+          itemCount: list.length,
+          itemBuilder: (context, index) {
+            final panna = list[index];
+            final isSelected = state.selectedNumbers.contains(panna);
+            return GestureDetector(
+              onTap: () => notifier.toggleSelectedNumber(panna),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primaryGold
+                      : const Color(0xFF1F2937),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primaryGold
+                        : const Color(0xFF374151),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  panna,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? AppColors.textPrimary : Colors.white,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAnkFilterChip(
+      String label, int value, bool isSelected, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primaryGold : const Color(0xFF1F2937),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primaryGold
+                  : const Color(0xFF374151),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isSelected ? AppColors.textPrimary : Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 3.1 & 3.2 Motor Pad (SP Motor & DP Motor)
+  Widget _buildMotorPad(
+      PlayMarketState state, PlayMarketViewModel notifier, {required bool isSp}) {
+    final selectedStr = state.selectedNumber ?? '';
+    final count = selectedStr.length;
+    final factor = isSp
+        ? PannaGenerator.getSpMotorFactor(count)
+        : PannaGenerator.getDpMotorFactor(count);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          isSp ? 'SP Motor Digit Selection:' : 'DP Motor Digit Selection:',
+          style: const TextStyle(
+              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Selected Digits: $count (Min 4 required)',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: count >= 4 ? AppColors.primaryGold : const Color(0xFFEF4444),
+          ),
+        ),
+        if (count >= 4) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Generated ${isSp ? 'Single' : 'Double'} Pannas: $factor combinations',
+            style: const TextStyle(fontSize: 12, color: Color(0xFF10B981)),
+          ),
+        ],
+        const SizedBox(height: 14),
+
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+          ),
+          itemCount: 10,
+          itemBuilder: (context, index) {
+            final digitStr = index.toString();
+            final isSelected = selectedStr.contains(digitStr);
+            return GestureDetector(
+              onTap: () => notifier.toggleMotorDigit(digitStr),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSelected
+                      ? AppColors.primaryGold
+                      : const Color(0xFF1F2937),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primaryGold
+                        : const Color(0xFF374151),
+                    width: 2,
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  digitStr,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: isSelected ? AppColors.textPrimary : Colors.white,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  // 3.3 SP DP TP Pad
+  Widget _buildSpDpTpPad(PlayMarketState state, PlayMarketViewModel notifier) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '1. Choose Base Ank (0 to 9):',
+          style: TextStyle(
+              fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        const SizedBox(height: 10),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
+          itemCount: 10,
+          itemBuilder: (context, index) {
+            final isSelected = state.spDpTpAnk == index;
+            return GestureDetector(
+              onTap: () => notifier.setSpDpTpAnk(index),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primaryGold
+                      : const Color(0xFF1F2937),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primaryGold
+                        : const Color(0xFF374151),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '$index',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? AppColors.textPrimary : Colors.white,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+
+        const Text(
+          '2. Select Panna Categories:',
+          style: TextStyle(
+              fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        const SizedBox(height: 10),
+
+        Row(
+          children: [
+            Expanded(
+              child: _buildCheckboxChip(
+                label: 'SP (12 Pannas)',
+                isSelected: state.spDpTpChoices.contains('SP'),
+                onTap: () => notifier.toggleSpDpTpChoice('SP'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildCheckboxChip(
+                label: 'DP (9 Pannas)',
+                isSelected: state.spDpTpChoices.contains('DP'),
+                onTap: () => notifier.toggleSpDpTpChoice('DP'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildCheckboxChip(
+                label: 'TP (1 Panna)',
+                isSelected: state.spDpTpChoices.contains('TP'),
+                onTap: () => notifier.toggleSpDpTpChoice('TP'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCheckboxChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryGold : const Color(0xFF1F2937),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryGold
+                : const Color(0xFF374151),
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: isSelected ? AppColors.textPrimary : Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 3.4 Family Panel Pad
+  Widget _buildFamilyPanelPad(
+      PlayMarketState state, PlayMarketViewModel notifier) {
+    final familyList = PannaGenerator.getFamilyPannas(state.familyPanna);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Enter Base 3-Digit Panna:',
+          style: TextStyle(
+              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          keyboardType: TextInputType.number,
+          maxLength: 3,
+          style: const TextStyle(color: Colors.white, fontSize: 18),
+          decoration: InputDecoration(
+            counterText: '',
+            hintText: 'e.g. 145',
+            hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+            filled: true,
+            fillColor: const Color(0xFF1F2937),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFF374151)),
+            ),
+          ),
+          onChanged: (val) => notifier.setFamilyPanna(val),
+        ),
+        const SizedBox(height: 16),
+
+        if (familyList.isNotEmpty) ...[
+          Text(
+            'Generated Family Pannas (${familyList.length} total):',
+            style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryGold),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: familyList.map((panna) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1F2937),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.primaryGold),
+                ),
+                child: Text(
+                  panna,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // 3.5 Half Sangam Pad
+  Widget _buildHalfSangamPad(
+      PlayMarketState state, PlayMarketViewModel notifier) {
+    final isType1 = state.halfSangamType == 'open_panna_close_digit';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Select Half Sangam Combination Type:',
+          style: TextStyle(
+              fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _buildCheckboxChip(
+                label: 'Open Panna + Close Digit',
+                isSelected: isType1,
+                onTap: () => notifier.setHalfSangamFields(
+                    state.halfPanna, state.halfDigit, 'open_panna_close_digit'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildCheckboxChip(
+                label: 'Open Digit + Close Panna',
+                isSelected: !isType1,
+                onTap: () => notifier.setHalfSangamFields(
+                    state.halfPanna, state.halfDigit, 'open_digit_close_panna'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isType1 ? 'Open 3-Digit Panna:' : 'Open Single Digit:',
+                    style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    keyboardType: TextInputType.number,
+                    maxLength: isType1 ? 3 : 1,
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    decoration: InputDecoration(
+                      counterText: '',
+                      hintText: isType1 ? '123' : '5',
+                      filled: true,
+                      fillColor: const Color(0xFF1F2937),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFF374151)),
+                      ),
                     ),
-                  );
-                }),
+                    onChanged: (val) {
+                      if (isType1) {
+                        notifier.setHalfSangamFields(
+                            val, state.halfDigit, state.halfSangamType);
+                      } else {
+                        notifier.setHalfSangamFields(
+                            state.halfPanna, val, state.halfSangamType);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isType1 ? 'Close Single Digit:' : 'Close 3-Digit Panna:',
+                    style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    keyboardType: TextInputType.number,
+                    maxLength: isType1 ? 1 : 3,
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    decoration: InputDecoration(
+                      counterText: '',
+                      hintText: isType1 ? '5' : '123',
+                      filled: true,
+                      fillColor: const Color(0xFF1F2937),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFF374151)),
+                      ),
+                    ),
+                    onChanged: (val) {
+                      if (isType1) {
+                        notifier.setHalfSangamFields(
+                            state.halfPanna, val, state.halfSangamType);
+                      } else {
+                        notifier.setHalfSangamFields(
+                            val, state.halfDigit, state.halfSangamType);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // 3.6 Full Sangam Pad
+  Widget _buildFullSangamPad(
+      PlayMarketState state, PlayMarketViewModel notifier) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Full Sangam Combination Inputs:',
+          style: TextStyle(
+              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        const SizedBox(height: 14),
+
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Open 3-Digit Panna:',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    keyboardType: TextInputType.number,
+                    maxLength: 3,
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    decoration: InputDecoration(
+                      counterText: '',
+                      hintText: 'e.g. 123',
+                      filled: true,
+                      fillColor: const Color(0xFF1F2937),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFF374151)),
+                      ),
+                    ),
+                    onChanged: (val) =>
+                        notifier.setFullSangamFields(val, state.fullClosePanna),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Close 3-Digit Panna:',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    keyboardType: TextInputType.number,
+                    maxLength: 3,
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    decoration: InputDecoration(
+                      counterText: '',
+                      hintText: 'e.g. 456',
+                      filled: true,
+                      fillColor: const Color(0xFF1F2937),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFF374151)),
+                      ),
+                    ),
+                    onChanged: (val) =>
+                        notifier.setFullSangamFields(state.fullOpenPanna, val),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Bottom Betting Inputs & Live Cost Estimator Bar
+  // ---------------------------------------------------------------------------
+  Widget _buildBottomBettingBar(
+    BuildContext context,
+    PlayMarketState state,
+    PlayMarketViewModel notifier,
+    int walletBalance,
+  ) {
+    final points = int.tryParse(state.amount.trim()) ?? 0;
+    final totalCost = points * state.multiplier;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        color: Color(0xFF1F2937),
+        border: Border(top: BorderSide(color: Color(0xFF374151))),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Points Input
+          TextField(
+            keyboardType: TextInputType.number,
+            style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white),
+            decoration: InputDecoration(
+              prefixText: '₹ ',
+              prefixStyle: const TextStyle(
+                  color: AppColors.primaryGold,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold),
+              hintText: 'Enter Points (e.g. 100)',
+              hintStyle:
+                  const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+              filled: true,
+              fillColor: const Color(0xFF111827),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Color(0xFF374151)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Color(0xFF374151)),
+              ),
+            ),
+            onChanged: (val) => notifier.setAmount(val),
+          ),
+          const SizedBox(height: 10),
+
+          // Live Cost Estimator Row
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111827),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF374151)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Total Bid Cost:',
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF9CA3AF),
+                      fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  '₹$points × ${state.multiplier} = ₹$totalCost',
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryGold),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 12),
 
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 1.8,
-            ),
-            itemCount: list.length,
-            itemBuilder: (context, index) {
-              final panna = list[index];
-              final isSelected = state.selectedNumbers.contains(panna);
-              return InkWell(
-                onTap: () => notifier.toggleSelectedNumber(panna),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primaryGold
-                        : AppColors.surfaceWhite,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                    border: Border.all(
-                        color: isSelected
-                            ? AppColors.primaryGold
-                            : AppColors.borderLight),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    panna,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color:
-                          isSelected ? AppColors.textPrimary : AppColors.textDark,
-                    ),
+          // Submit Button
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFFF8D044),
+                    Color(0xFFE4AA25),
+                    Color(0xFFC58514),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-              );
-            },
+                onPressed: state.isLoading
+                    ? null
+                    : () async {
+                        final ok = await notifier.placeBet(
+                            walletBalance: walletBalance);
+                        if (context.mounted) {
+                          if (ok) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                backgroundColor: Color(0xFF10B981),
+                                content: Text('Bet placed successfully!'),
+                              ),
+                            );
+                          } else if (state.error != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: const Color(0xFFEF4444),
+                                content: Text(state.error!),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                child: state.isLoading
+                    ? const CircularProgressIndicator(
+                        color: AppColors.textPrimary)
+                    : const Text(
+                        'PLACE BET NOW',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+              ),
+            ),
           ),
         ],
-      );
-    }
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 5,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
       ),
-      itemCount: 10,
-      itemBuilder: (context, index) {
-        final str = index.toString();
-        final isSelected = (state.selectedNumber ?? '').contains(str);
-        return InkWell(
-          onTap: () => notifier.toggleMotorDigit(str),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // History Modal Dialog
+  // ---------------------------------------------------------------------------
+  void _showHistoryDialog(BuildContext context, String marketName) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: const Color(0xFF111827),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFF374151)),
+          ),
           child: Container(
-            decoration: BoxDecoration(
-              color:
-                  isSelected ? AppColors.primaryGold : AppColors.surfaceWhite,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-              border: Border.all(
-                  color: isSelected
-                      ? AppColors.primaryGold
-                      : AppColors.borderLight),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              str,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? AppColors.textPrimary : AppColors.textDark,
-              ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${marketName.toUpperCase()} HISTORY',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryGold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                      onPressed: () => Navigator.pop(dialogContext),
+                    ),
+                  ],
+                ),
+                const Divider(color: Color(0xFF374151)),
+                const SizedBox(height: 20),
+                const Icon(Icons.history_rounded,
+                    size: 48, color: Color(0xFF4B5563)),
+                const SizedBox(height: 12),
+                const Text(
+                  'No recent bets placed for this session.',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1F2937),
+                      side: const BorderSide(color: Color(0xFF374151)),
+                    ),
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('Close',
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
             ),
           ),
         );
