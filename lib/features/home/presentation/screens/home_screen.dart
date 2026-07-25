@@ -178,113 +178,148 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final isPermanentlyDenied = _permissionStatus == PermissionStatus.permanentlyDenied ||
         _permissionStatus == PermissionStatus.restricted;
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      body: SafeArea(
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.p24, vertical: AppSpacing.p32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.p24),
-                decoration: BoxDecoration(
-                  color: isPermanentlyDenied ? AppColors.statusRedBg : AppColors.primaryGoldBg,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isPermanentlyDenied ? Icons.gpp_maybe : Icons.contacts,
-                  color: isPermanentlyDenied ? AppColors.statusRed : AppColors.primaryGold,
-                  size: 80,
-                ),
-              ),
-              const SizedBox(height: 32),
-              const Text(
-                'Contacts Access Required',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                isPermanentlyDenied
-                    ? 'Contacts permission has been permanently denied. Please open Settings and enable Contacts access to continue using King Wins.'
-                    : 'King Wins requires contacts access to help you connect with friends, verify accounts, and perform wallet transfers. Please allow access to proceed.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
-              ),
-              const Spacer(),
-              if (isPermanentlyDenied) ...[
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      await openAppSettings();
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: AppColors.backgroundLight,
+          body: SafeArea(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.p24, vertical: AppSpacing.p32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.p24),
+                    decoration: BoxDecoration(
+                      color: isPermanentlyDenied ? AppColors.statusRedBg : AppColors.primaryGoldBg,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isPermanentlyDenied ? Icons.gpp_maybe : Icons.contacts,
+                      color: isPermanentlyDenied ? AppColors.statusRed : AppColors.primaryGold,
+                      size: 80,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const Text(
+                    'Contacts Access Required',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    isPermanentlyDenied
+                        ? 'Contacts permission has been permanently denied. Please open Settings and enable Contacts access to continue using King Wins.'
+                        : 'King Wins requires contacts access to help you connect with friends, verify accounts, and perform wallet transfers. Please allow access to proceed.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (isPermanentlyDenied) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await openAppSettings();
+                        },
+                        child: const Text(
+                          'Open Settings',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: OutlinedButton(
+                        onPressed: () => _checkAndRequestPermission(),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.border),
+                        ),
+                        child: const Text(
+                          'Retry Check',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () => _checkAndRequestPermission(),
+                        child: const Text(
+                          'Grant Permission',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  TextButton.icon(
+                    onPressed: () {
+                      ref.read(authViewModelProvider.notifier).logout();
                     },
-                    child: const Text(
-                      'Open Settings',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    icon: const Icon(Icons.logout, color: AppColors.statusRed, size: 18),
+                    label: const Text(
+                      'Switch Account / Logout',
+                      style: TextStyle(
+                        color: AppColors.statusRed,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton(
-                    onPressed: () => _checkAndRequestPermission(),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.border),
-                    ),
-                    child: const Text(
-                      'Retry Check',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-                    ),
-                  ),
-                ),
-              ] else ...[
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () => _checkAndRequestPermission(),
-                    child: const Text(
-                      'Grant Permission',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              TextButton.icon(
-                onPressed: () {
-                  ref.read(authViewModelProvider.notifier).logout();
-                },
-                icon: const Icon(Icons.logout, color: AppColors.statusRed, size: 18),
-                label: const Text(
-                  'Switch Account / Logout',
-                  style: TextStyle(
-                    color: AppColors.statusRed,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
+                  const SizedBox(height: 16),
+                ],
               ),
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
         ),
-      ),
+        // ── Skip button ── top-right corner
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 8,
+          right: 16,
+          child: TextButton(
+            onPressed: () {
+              setState(() {
+                _permissionStatus = PermissionStatus.denied;
+              });
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Skip',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                SizedBox(width: 4),
+                Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.textSecondary),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
