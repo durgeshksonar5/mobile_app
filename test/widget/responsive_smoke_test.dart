@@ -3,6 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:king_wins_mobile_app/core/config/app_config.dart';
 import 'package:king_wins_mobile_app/features/auth/presentation/screens/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:king_wins_mobile_app/features/auth/data/services/firebase_auth_service.dart';
+import 'package:king_wins_mobile_app/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:king_wins_mobile_app/features/home/presentation/screens/home_screen.dart';
 import 'package:king_wins_mobile_app/app/dependency_injection/providers.dart';
 import 'package:king_wins_mobile_app/features/auth/data/repositories/auth_repository.dart';
@@ -73,6 +76,28 @@ class FakeResultsRepository implements ResultsRepository {
   Future<void> createWithdrawRequest(int amount) async {}
 }
 
+class FakeFirebaseAuthService implements FirebaseAuthService {
+  @override
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required Function(String verificationId, int? resendToken) onCodeSent,
+    required Function(FirebaseAuthException exception) onVerificationFailed,
+    required Function(PhoneAuthCredential credential) onVerificationCompleted,
+    required Function(String verificationId) onAutoRetrievalTimeout,
+  }) async {}
+
+  @override
+  Future<UserCredential> signInWithCredential(PhoneAuthCredential credential) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<String?> getCurrentIdToken() async => null;
+
+  @override
+  Future<void> signOut() async {}
+}
+
 void main() {
   setUpAll(() {
     AppConfig.initialize();
@@ -98,6 +123,7 @@ void main() {
           overrides: [
             authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
             walletRepositoryProvider.overrideWithValue(FakeWalletRepository()),
+            firebaseAuthServiceProvider.overrideWithValue(FakeFirebaseAuthService()),
           ],
           child: const MaterialApp(
             home: LoginScreen(),

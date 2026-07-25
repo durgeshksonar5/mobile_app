@@ -12,6 +12,9 @@ import 'package:king_wins_mobile_app/features/wallet/domain/repositories/wallet_
 
 import 'package:king_wins_mobile_app/features/notifications/data/services/notification_service.dart';
 import 'package:king_wins_mobile_app/features/notifications/presentation/providers/notification_providers.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:king_wins_mobile_app/features/auth/data/services/firebase_auth_service.dart';
+import 'package:king_wins_mobile_app/features/auth/presentation/controllers/auth_controller.dart';
 
 class FakeAuthRepository implements AuthRepository {
   static const dummyUser = UserModel(
@@ -54,6 +57,28 @@ class FakeNotificationService implements NotificationService {
   Future<void> requestPermissionsAndRegister() async {}
 }
 
+class FakeFirebaseAuthService implements FirebaseAuthService {
+  @override
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required Function(String verificationId, int? resendToken) onCodeSent,
+    required Function(FirebaseAuthException exception) onVerificationFailed,
+    required Function(PhoneAuthCredential credential) onVerificationCompleted,
+    required Function(String verificationId) onAutoRetrievalTimeout,
+  }) async {}
+
+  @override
+  Future<UserCredential> signInWithCredential(PhoneAuthCredential credential) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<String?> getCurrentIdToken() async => null;
+
+  @override
+  Future<void> signOut() async {}
+}
+
 void main() {
   setUpAll(() {
     AppConfig.initialize();
@@ -68,6 +93,8 @@ void main() {
           walletRepositoryProvider.overrideWithValue(FakeWalletRepository()),
           notificationServiceProvider
               .overrideWithValue(FakeNotificationService()),
+          firebaseAuthServiceProvider
+              .overrideWithValue(FakeFirebaseAuthService()),
         ],
         child: const KingWinApp(),
       ),

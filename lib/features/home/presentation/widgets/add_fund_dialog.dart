@@ -4,7 +4,7 @@ import '../../../../app/dependency_injection/providers.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../wallet/presentation/view_models/wallet_view_model.dart';
-
+import '../../../auth/presentation/view_models/auth_view_model.dart';
 import '../../../../core/services/external_link_service.dart';
 
 class AddFundDialog extends ConsumerStatefulWidget {
@@ -38,9 +38,12 @@ class _AddFundDialogState extends ConsumerState<AddFundDialog> {
       final repo = ref.read(resultsRepositoryProvider);
       await repo.createDepositRequest(amt);
       ref.read(walletViewModelProvider.notifier).fetchBalance(isRefresh: true);
+      final user = ref.read(authViewModelProvider).user;
+      final username = user?.name ?? 'Unknown';
+      final userPhone = user?.phoneNumber ?? 'Unknown';
       ExternalLinkService.launchWhatsApp(
         customMessage:
-            'Hi Admin, I have submitted an Add Fund deposit request of ₹$amt on King Win app.',
+            'Deposit Request\nUsername: $username\nAmount: ₹$amt\nPhone Number: $userPhone',
       );
       if (mounted) {
         Navigator.pop(context);

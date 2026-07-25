@@ -72,9 +72,21 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
       final repo = ref.read(resultsRepositoryProvider);
       await repo.createWithdrawRequest(amt);
       ref.read(walletViewModelProvider.notifier).fetchBalance(isRefresh: true);
+      final username = widget.user?.name ?? 'Unknown';
+      final userPhone = widget.user?.phoneNumber ?? 'Unknown';
+      final bankText = widget.user?.bankName != null && widget.user!.bankName!.isNotEmpty
+          ? '\nBank Name: ${widget.user!.bankName}\nAccount Number: ${widget.user!.accountNumber}\nIFSC Code: ${widget.user!.ifscCode}'
+          : '';
+      final upiText = (widget.user?.upiId != null && widget.user!.upiId!.isNotEmpty)
+          ? '\nUPI ID: ${widget.user!.upiId}'
+          : '';
+      final upiNumText = (widget.user?.upiNumber != null && widget.user!.upiNumber!.isNotEmpty)
+          ? '\nUPI Number: ${widget.user!.upiNumber}'
+          : '';
+
       ExternalLinkService.launchWhatsApp(
         customMessage:
-            'Hi Admin, I have submitted a withdrawal request of ₹$amt on King Win app.',
+            'Withdraw Request\nUsername: $username\nAmount: ₹$amt\nPhone Number: $userPhone$bankText$upiText$upiNumText',
       );
       if (mounted) {
         Navigator.pop(context);

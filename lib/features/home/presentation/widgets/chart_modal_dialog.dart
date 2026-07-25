@@ -398,44 +398,108 @@ class _ChartModalDialogState extends ConsumerState<ChartModalDialog> {
         ),
       );
     } else {
-      // Panel Chart: Stacked 3 lines
+      final op1 = (openPanna.isNotEmpty && openPanna != '***') ? openPanna[0] : '*';
+      final op2 = (openPanna.length > 1 && openPanna != '***') ? openPanna[1] : '*';
+      final op3 = (openPanna.length > 2 && openPanna != '***') ? openPanna[2] : '*';
+
+      final cp1 = (closePanna.isNotEmpty && closePanna != '***') ? closePanna[0] : '*';
+      final cp2 = (closePanna.length > 1 && closePanna != '***') ? closePanna[1] : '*';
+      final cp3 = (closePanna.length > 2 && closePanna != '***') ? closePanna[2] : '*';
+
+      final j1 = (jodi.isNotEmpty && jodi != '**') ? jodi[0] : '*';
+      final j2 = (jodi.length > 1 && jodi != '**') ? jodi[1] : '*';
+
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
         alignment: Alignment.center,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              openPanna,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: openPanna == '***'
-                    ? AppColors.textMuted
-                    : AppColors.textPrimary,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  op1,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: op1 == '*' ? AppColors.textMuted : AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  cp1,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: cp1 == '*' ? AppColors.textMuted : AppColors.statusRed,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 2),
-            Text(
-              jodi,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-                color: jodi == '**'
-                    ? AppColors.textMuted
-                    : (redJodi ? AppColors.statusRed : AppColors.textPrimary),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  op2,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: op2 == '*' ? AppColors.textMuted : AppColors.textPrimary,
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      j1,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: j1 == '*' ? AppColors.textMuted : AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      j2,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: j2 == '*' ? AppColors.textMuted : AppColors.statusRed,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  cp2,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: cp2 == '*' ? AppColors.textMuted : AppColors.statusRed,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 2),
-            Text(
-              closePanna,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: closePanna == '***'
-                    ? AppColors.textMuted
-                    : AppColors.textPrimary,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  op3,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: op3 == '*' ? AppColors.textMuted : AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  cp3,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: cp3 == '*' ? AppColors.textMuted : AppColors.statusRed,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

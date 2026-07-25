@@ -7,7 +7,7 @@ class AppConfig {
   static const String _apiUrl = String.fromEnvironment('API_BASE_URL',
       defaultValue: 'https://api.quebix.in/api/v1');
   static const String _whatsapp = String.fromEnvironment('WHATSAPP_LINK',
-      defaultValue: 'https://wa.link/ctw7uq');
+      defaultValue: 'https://wa.me/918767467998');
   static const String _syncPurpose = String.fromEnvironment(
     'CONTACT_SYNC_PURPOSE',
     defaultValue:

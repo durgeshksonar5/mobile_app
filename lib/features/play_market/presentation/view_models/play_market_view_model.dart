@@ -36,9 +36,14 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
           '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
       final info = market.getDisplayInfo(todayStr, now);
 
-      if (info.statusType == 'running_close' || info.statusType == 'closed') {
-        state = state.copyWith(openDisabled: true, session: 'close');
-      }
+      final openDisabled = info.statusType == 'running_close' || info.statusType == 'closed';
+      final isMarketClosed = info.statusType == 'closed';
+
+      state = state.copyWith(
+        openDisabled: openDisabled,
+        isMarketClosed: isMarketClosed,
+        session: openDisabled ? 'close' : 'open',
+      );
     } catch (_) {}
   }
 
@@ -127,6 +132,16 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
     final amt = int.tryParse(state.amount.trim());
     if (amt == null || amt <= 0) {
       state = state.copyWith(error: 'Please enter a valid points amount.');
+      return false;
+    }
+
+    if (state.openDisabled &&
+        (state.activeGame == 'jodi' ||
+            state.activeGame == 'half-sagam' ||
+            state.activeGame == 'full-sagam')) {
+      state = state.copyWith(
+          error:
+              'Jodi, Half Sangam, and Full Sangam bids are not allowed when the Open session is closed.');
       return false;
     }
 

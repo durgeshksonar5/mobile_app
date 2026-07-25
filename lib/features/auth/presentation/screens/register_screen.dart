@@ -6,6 +6,7 @@ import '../../../../app/router/route_paths.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/validation/validators.dart';
+import '../controllers/auth_controller.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -34,7 +35,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
-  void _handleSendOtp() {
+  void _handleSendOtp() async {
     setState(() {
       _localError = null;
       _infoMessage = null;
@@ -54,10 +55,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
-    setState(() {
-      _step = 2;
-      _infoMessage = 'Verification code sent to your phone number via SMS.';
-    });
+    final formattedPhone = Validators.formatPhoneNumber(_phoneController.text);
+    await ref.read(authControllerProvider.notifier).sendOtp(formattedPhone);
+
+    if (mounted) {
+      final state = ref.read(authControllerProvider);
+      if (state.error != null) {
+        setState(() {
+          _localError = state.error;
+        });
+      } else if (state.isCodeSent) {
+        setState(() {
+          _step = 2;
+          _infoMessage = 'Verification code sent to your phone number via SMS.';
+        });
+      }
+    }
   }
 
   void _handleVerifyOtp() async {
@@ -73,13 +86,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
-    final viewModel = ref.read(authViewModelProvider.notifier);
-    // Submit registration call
-    final success = await viewModel.firebaseLogin(
-      idToken: 'mock_firebase_id_token_${_otpController.text.trim()}',
-      name: _nameController.text.trim(),
-      password: _passwordController.text.trim(),
-      isRegister: true,
+    final success = await ref.read(authControllerProvider.notifier).verifyOtpAndRegister(
+      _otpController.text.trim(),
+      _nameController.text.trim(),
+      _passwordController.text.trim(),
     );
 
     if (mounted && success) {
@@ -88,6 +98,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       });
       Future.delayed(const Duration(milliseconds: 1000), () {
         if (mounted) context.go(RoutePaths.home);
+      });
+    } else if (mounted) {
+      final state = ref.read(authControllerProvider);
+      setState(() {
+        _localError = state.error ?? 'Registration failed.';
       });
     }
   }

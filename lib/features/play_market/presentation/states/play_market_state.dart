@@ -6,6 +6,7 @@ class PlayMarketState {
       activeGame; // 'list', 'single', 'jodi', 'single-panna', 'double-panna', 'triple-panna', 'sp-motor', 'dp-motor', 'sp-dp-tp', 'half-sagam', 'full-sagam', 'family-panel'
   final String session; // 'open' or 'close'
   final bool openDisabled;
+  final bool isMarketClosed;
   final String? selectedNumber;
   final List<String> selectedNumbers;
   final String amount;
@@ -27,6 +28,7 @@ class PlayMarketState {
     this.activeGame = 'list',
     this.session = 'open',
     this.openDisabled = false,
+    this.isMarketClosed = false,
     this.selectedNumber,
     this.selectedNumbers = const [],
     this.amount = '',
@@ -77,6 +79,7 @@ class PlayMarketState {
     String? activeGame,
     String? session,
     bool? openDisabled,
+    bool? isMarketClosed,
     String? selectedNumber,
     List<String>? selectedNumbers,
     String? amount,
@@ -98,6 +101,7 @@ class PlayMarketState {
       activeGame: activeGame ?? this.activeGame,
       session: session ?? this.session,
       openDisabled: openDisabled ?? this.openDisabled,
+      isMarketClosed: isMarketClosed ?? this.isMarketClosed,
       selectedNumber: selectedNumber ?? this.selectedNumber,
       selectedNumbers: selectedNumbers ?? this.selectedNumbers,
       amount: amount ?? this.amount,

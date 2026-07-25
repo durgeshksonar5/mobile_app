@@ -145,6 +145,26 @@ class MarketResult {
       return null;
     }
   }
+
+  int getOpenTimeMinutes() {
+    if (openTime.isEmpty) return 0;
+    try {
+      final clean = openTime.trim().toUpperCase();
+      final match = RegExp(r'^(\d+):(\d+)\s*(AM|PM)$').firstMatch(clean);
+      if (match == null) return 0;
+
+      int hours = int.parse(match.group(1)!);
+      final minutes = int.parse(match.group(2)!);
+      final modifier = match.group(3)!;
+
+      if (modifier == 'PM' && hours < 12) hours += 12;
+      if (modifier == 'AM' && hours == 12) hours = 0;
+
+      return hours * 60 + minutes;
+    } catch (_) {
+      return 0;
+    }
+  }
 }
 
 class MarketDisplayInfo {

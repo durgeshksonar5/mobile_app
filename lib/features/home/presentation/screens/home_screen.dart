@@ -13,6 +13,9 @@ import '../../../auth/presentation/view_models/auth_view_model.dart';
 import '../widgets/sidebar_drawer.dart';
 import '../widgets/market_card.dart';
 import '../widgets/chart_modal_dialog.dart';
+import '../../domain/models/market_result.dart';
+import '../../domain/models/bid_item.dart';
+import '../../domain/models/passbook_item.dart';
 import '../widgets/add_fund_dialog.dart';
 import '../widgets/withdraw_dialog.dart';
 import '../widgets/notifications_dialog.dart';
@@ -34,6 +37,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _passbookFilter = 'all'; // 'all', 'deposit', 'withdraw'
+  int _passbookCurrentPage = 1;
+  String _bidsFilter = 'all'; // 'all', 'win', 'loss', 'active'
+  int _bidsCurrentPage = 1;
+  String _fundsPassbookFilter = 'all';
+  int _fundsPassbookCurrentPage = 1;
   List<AppNotification> _notifications =
       AppNotification.getInitialSampleNotifications();
   PermissionStatus? _permissionStatus;
@@ -788,12 +796,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       );
     }
 
+    final sortedMarkets = List<MarketResult>.from(state.markets)..sort((a, b) {
+      final aInfo = a.getDisplayInfo(todayStr, now);
+      final bInfo = b.getDisplayInfo(todayStr, now);
+
+      final aClosed = aInfo.statusType == 'closed';
+      final bClosed = bInfo.statusType == 'closed';
+
+      if (aClosed != bClosed) {
+        return aClosed ? 1 : -1;
+      }
+      return a.getOpenTimeMinutes().compareTo(b.getOpenTimeMinutes());
+    });
+
     return ListView.separated(
       padding: const EdgeInsets.all(AppSpacing.p16),
-      itemCount: state.markets.length,
+      itemCount: sortedMarkets.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final market = state.markets[index];
+        final market = sortedMarkets[index];
         return MarketCard(
           market: market,
           todayStr: todayStr,
@@ -816,6 +837,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       if (_passbookFilter == 'all') return true;
       return item.type == _passbookFilter;
     }).toList();
+
+    // Sort by date descending
+    final sortedItems = List<PassbookItem>.from(filteredItems)
+      ..sort((a, b) => b.date.compareTo(a.date));
+
+    final int itemsPerPage = 10;
+    final int totalItems = sortedItems.length;
+    final int totalPages = (totalItems / itemsPerPage).ceil();
+    final int safeTotalPages = totalPages == 0 ? 1 : totalPages;
+
+    if (_passbookCurrentPage > safeTotalPages) {
+      _passbookCurrentPage = safeTotalPages;
+    }
+
+    final int startIndex = (_passbookCurrentPage - 1) * itemsPerPage;
+    final int endIndex = (startIndex + itemsPerPage < totalItems)
+        ? startIndex + itemsPerPage
+        : totalItems;
+
+    final paginatedItems = sortedItems.sublist(startIndex, endIndex);
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.p16),
@@ -861,7 +902,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               child: ChoiceChip(
                 label: Text(filter.toUpperCase()),
                 selected: isActive,
-                onSelected: (_) => setState(() => _passbookFilter = filter),
+                onSelected: (_) => setState(() {
+                  _passbookFilter = filter;
+                  _passbookCurrentPage = 1;
+                }),
                 selectedColor: AppColors.textDark,
                 labelStyle: TextStyle(
                   fontSize: 11,
@@ -875,10 +919,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
         const SizedBox(height: 14),
 
-        if (filteredItems.isEmpty)
-          const AppEmptyView(title: 'No transaction history found.')
-        else
-          ...filteredItems.map((item) {
+        if (paginatedItems.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              child: Text(
+                'No transactions found.',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+              ),
+            ),
+          )
+        else ...[
+          ...paginatedItems.map((item) {
             final isDeposit = item.type == 'deposit';
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
@@ -955,6 +1007,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
             );
           }),
+          _buildPagination(
+            currentPage: _passbookCurrentPage,
+            totalPages: safeTotalPages,
+            onPageChanged: (page) => setState(() => _passbookCurrentPage = page),
+          ),
+        ],
       ],
     );
   }
@@ -967,96 +1025,203 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       );
     }
 
-    return ListView.separated(
+    final filteredBids = state.bidsItems.where((bid) {
+      if (_bidsFilter == 'all') return true;
+      final statusLower = bid.status.toLowerCase();
+      if (_bidsFilter == 'win') return statusLower == 'won';
+      if (_bidsFilter == 'loss') return statusLower == 'lost';
+      if (_bidsFilter == 'active') return statusLower == 'active';
+      return true;
+    }).toList();
+
+    // Sort by createdAt descending
+    final sortedBids = List<BidItem>.from(filteredBids)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    final int itemsPerPage = 10;
+    final int totalItems = sortedBids.length;
+    final int totalPages = (totalItems / itemsPerPage).ceil();
+    final int safeTotalPages = totalPages == 0 ? 1 : totalPages;
+
+    if (_bidsCurrentPage > safeTotalPages) {
+      _bidsCurrentPage = safeTotalPages;
+    }
+
+    final int startIndex = (_bidsCurrentPage - 1) * itemsPerPage;
+    final int endIndex = (startIndex + itemsPerPage < totalItems)
+        ? startIndex + itemsPerPage
+        : totalItems;
+
+    final paginatedBids = sortedBids.sublist(startIndex, endIndex);
+
+    return ListView(
       padding: const EdgeInsets.all(AppSpacing.p16),
-      itemCount: state.bidsItems.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 10),
-      itemBuilder: (context, index) {
-        final bid = state.bidsItems[index];
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceWhite,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-            border: Border.all(color: AppColors.borderLight),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
+      children: [
+        // Bids Filter Chips
+        Row(
+          children: ['all', 'win', 'loss', 'active'].map((filter) {
+            final isActive = _bidsFilter == filter;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: ChoiceChip(
+                label: Text(filter.toUpperCase()),
+                selected: isActive,
+                onSelected: (_) => setState(() {
+                  _bidsFilter = filter;
+                  _bidsCurrentPage = 1;
+                }),
+                selectedColor: AppColors.textDark,
+                labelStyle: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color:
+                      isActive ? AppColors.textWhite : AppColors.textSecondary,
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 14),
+
+        if (paginatedBids.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              child: Text(
+                'No bids found for this filter.',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+              ),
+            ),
+          )
+        else ...[
+          ...paginatedBids.map((bid) {
+            final statusLower = bid.status.toLowerCase();
+            final isWon = statusLower == 'won';
+            final isLost = statusLower == 'lost';
+            final Color statusColor = isWon
+                ? AppColors.statusGreen
+                : (isLost ? AppColors.statusRed : AppColors.textSecondary);
+            final Color statusBgColor = isWon
+                ? AppColors.statusGreenBg
+                : (isLost ? AppColors.statusRedBg : AppColors.borderLight);
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceWhite,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGoldBg,
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      bid.selectedNumber,
-                      style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.primaryGold),
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGoldBg,
+                          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          bid.selectedNumber,
+                          style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.primaryGold),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${bid.marketName} - ${bid.gameType}',
+                            style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark),
+                          ),
+                          Text(
+                            'Session: ${bid.session} | Number: ${bid.selectedNumber}',
+                            style: const TextStyle(
+                                fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${bid.marketName} - ${bid.gameType}',
+                        '₹${bid.amount}',
                         style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
                             color: AppColors.textDark),
                       ),
-                      Text(
-                        'Session: ${bid.session} | Number: ${bid.selectedNumber}',
-                        style: const TextStyle(
-                            fontSize: 11, color: AppColors.textSecondary),
+                      const SizedBox(height: 2),
+                      Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: statusBgColor,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          bid.status,
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: statusColor),
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '₹${bid.amount}',
-                    style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textDark),
-                  ),
-                  const SizedBox(height: 2),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.statusGreenBg,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      bid.status,
-                      style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.statusGreen),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            );
+          }),
+          _buildPagination(
+            currentPage: _bidsCurrentPage,
+            totalPages: safeTotalPages,
+            onPageChanged: (page) => setState(() => _bidsCurrentPage = page),
           ),
-        );
-      },
+        ],
+      ],
     );
   }
 
   Widget _buildFundsView(BuildContext context, HomeState state, user) {
+    final filteredItems = state.passbookItems.where((item) {
+      if (_fundsPassbookFilter == 'all') return true;
+      return item.type == _fundsPassbookFilter;
+    }).toList();
+
+    // Sort by date descending
+    final sortedItems = List<PassbookItem>.from(filteredItems)
+      ..sort((a, b) => b.date.compareTo(a.date));
+
+    final int itemsPerPage = 10;
+    final int totalItems = sortedItems.length;
+    final int totalPages = (totalItems / itemsPerPage).ceil();
+    final int safeTotalPages = totalPages == 0 ? 1 : totalPages;
+
+    if (_fundsPassbookCurrentPage > safeTotalPages) {
+      _fundsPassbookCurrentPage = safeTotalPages;
+    }
+
+    final int startIndex = (_fundsPassbookCurrentPage - 1) * itemsPerPage;
+    final int endIndex = (startIndex + itemsPerPage < totalItems)
+        ? startIndex + itemsPerPage
+        : totalItems;
+
+    final paginatedItems = sortedItems.sublist(startIndex, endIndex);
+
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.p16),
       children: [
@@ -1119,6 +1284,141 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
           ],
         ),
+        const SizedBox(height: 24),
+        const Divider(color: AppColors.borderLight, height: 1),
+        const SizedBox(height: 20),
+
+        // Section Title: Transaction History
+        const Text(
+          'TRANSACTION HISTORY',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textDark,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Passbook Filter Chips for Funds
+        Row(
+          children: ['all', 'deposit', 'withdraw'].map((filter) {
+            final isActive = _fundsPassbookFilter == filter;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: ChoiceChip(
+                label: Text(filter.toUpperCase()),
+                selected: isActive,
+                onSelected: (_) => setState(() {
+                  _fundsPassbookFilter = filter;
+                  _fundsPassbookCurrentPage = 1;
+                }),
+                selectedColor: AppColors.textDark,
+                labelStyle: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color:
+                      isActive ? AppColors.textWhite : AppColors.textSecondary,
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 14),
+
+        // Paginated Transaction List
+        if (paginatedItems.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              child: Text(
+                'No transactions found.',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+              ),
+            ),
+          )
+        else ...[
+          ...paginatedItems.map((item) {
+            final isDeposit = item.type == 'deposit';
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceWhite,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: isDeposit
+                            ? AppColors.statusGreenBg
+                            : AppColors.statusRedBg,
+                        child: Text(
+                          isDeposit ? '+' : '-',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isDeposit
+                                ? AppColors.statusGreen
+                                : AppColors.statusRed,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isDeposit ? 'Deposit Request' : 'Withdrawal Request',
+                            style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark),
+                          ),
+                          Text(
+                            item.date.toLocal().toString().split('.')[0],
+                            style: const TextStyle(
+                                fontSize: 11, color: AppColors.textMuted),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${isDeposit ? '+' : '-'} ₹${item.amount}',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: isDeposit
+                              ? AppColors.statusGreen
+                              : AppColors.statusRed,
+                        ),
+                      ),
+                      Text(
+                        item.status,
+                        style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textMuted),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }),
+          _buildPagination(
+            currentPage: _fundsPassbookCurrentPage,
+            totalPages: safeTotalPages,
+            onPageChanged: (page) => setState(() => _fundsPassbookCurrentPage = page),
+          ),
+        ],
       ],
     );
   }
@@ -1168,12 +1468,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildChartsView(BuildContext context, HomeState state) {
+    final DateTime now = DateTime.now();
+    final String todayStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+    final sortedMarkets = List<MarketResult>.from(state.markets)..sort((a, b) {
+      final aInfo = a.getDisplayInfo(todayStr, now);
+      final bInfo = b.getDisplayInfo(todayStr, now);
+
+      final aClosed = aInfo.statusType == 'closed';
+      final bClosed = bInfo.statusType == 'closed';
+
+      if (aClosed != bClosed) {
+        return aClosed ? 1 : -1;
+      }
+      return a.getOpenTimeMinutes().compareTo(b.getOpenTimeMinutes());
+    });
+
     return ListView.separated(
       padding: const EdgeInsets.all(AppSpacing.p16),
-      itemCount: state.markets.length,
+      itemCount: sortedMarkets.length,
       separatorBuilder: (context, index) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
-        final market = state.markets[index];
+        final market = sortedMarkets[index];
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1663,6 +1980,96 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
         const SizedBox(height: 20),
       ],
+    );
+  }
+
+  Widget _buildPagination({
+    required int currentPage,
+    required int totalPages,
+    required ValueChanged<int> onPageChanged,
+  }) {
+    if (totalPages <= 1) return const SizedBox.shrink();
+
+    final List<Widget> pageButtons = [];
+
+    // Previous Button
+    pageButtons.add(
+      _buildPageItem(
+        label: '«',
+        isActive: false,
+        isEnabled: currentPage > 1,
+        onTap: () => onPageChanged(currentPage - 1),
+      ),
+    );
+
+    // Page Number Buttons
+    for (int i = 1; i <= totalPages; i++) {
+      pageButtons.add(
+        _buildPageItem(
+          label: '$i',
+          isActive: i == currentPage,
+          isEnabled: true,
+          onTap: () => onPageChanged(i),
+        ),
+      );
+    }
+
+    // Next Button
+    pageButtons.add(
+      _buildPageItem(
+        label: '»',
+        isActive: false,
+        isEnabled: currentPage < totalPages,
+        onTap: () => onPageChanged(currentPage + 1),
+      ),
+    );
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: pageButtons,
+      ),
+    );
+  }
+
+  Widget _buildPageItem({
+    required String label,
+    required bool isActive,
+    required bool isEnabled,
+    required VoidCallback onTap,
+  }) {
+    final Color bgColor = isActive
+        ? AppColors.primaryGold
+        : (isEnabled ? AppColors.surfaceWhite : AppColors.background);
+    final Color textColor = isActive
+        ? AppColors.textWhite
+        : (isEnabled ? AppColors.textDark : AppColors.textMuted);
+    final BorderSide borderSide = BorderSide(
+      color: isActive ? AppColors.primaryGold : AppColors.borderLight,
+      width: 1,
+    );
+
+    return InkWell(
+      onTap: isEnabled ? onTap : null,
+      child: Container(
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.fromBorderSide(borderSide),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
+        ),
+      ),
     );
   }
 }

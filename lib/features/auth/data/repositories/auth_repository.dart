@@ -2,6 +2,7 @@ import '../../domain/models/user_model.dart';
 import '../services/auth_service.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/storage/preferences_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthRepository {
   final AuthService _authService;
@@ -91,5 +92,8 @@ class AuthRepository {
     }
     await _secureStorage.clearTokens();
     await _preferences.clearAll();
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (_) {}
   }
 }

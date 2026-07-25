@@ -74,9 +74,11 @@ class PlayMarketScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: state.activeGame == 'list'
-            ? _buildGameModesGrid(context, decodedName, notifier)
-            : _buildBettingScreen(context, state, notifier, walletBalance),
+        child: state.isMarketClosed
+            ? _buildMarketClosedView(decodedName)
+            : (state.activeGame == 'list'
+                ? _buildGameModesGrid(context, decodedName, notifier, state.openDisabled)
+                : _buildBettingScreen(context, state, notifier, walletBalance)),
       ),
     );
   }
@@ -85,7 +87,11 @@ class PlayMarketScreen extends ConsumerWidget {
   // Game Modes Selection Grid
   // ---------------------------------------------------------------------------
   Widget _buildGameModesGrid(
-      BuildContext context, String marketName, PlayMarketViewModel notifier) {
+      BuildContext context,
+      String marketName,
+      PlayMarketViewModel notifier,
+      bool openDisabled,
+  ) {
     final gameModes = [
       {
         'id': 'single',
@@ -245,31 +251,48 @@ class PlayMarketScreen extends ConsumerWidget {
             final Color border = mode['border'] as Color;
             final Color iconColor = mode['iconColor'] as Color;
 
-            return InkWell(
-              onTap: () => notifier.selectGame(id),
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: border, width: 1.5),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(icon, size: 32, color: iconColor),
-                    const SizedBox(height: 10),
-                    Text(
-                      name,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+            final bool isOpenOnlyGame =
+                id == 'jodi' || id == 'half-sagam' || id == 'full-sagam';
+            final bool isGameDisabled = openDisabled && isOpenOnlyGame;
+
+            return Opacity(
+              opacity: isGameDisabled ? 0.4 : 1.0,
+              child: InkWell(
+                onTap: isGameDisabled
+                    ? () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: AppColors.statusRed,
+                            content: Text(
+                                '$name bids can only be placed when the Open session is active.'),
+                          ),
+                        );
+                      }
+                    : () => notifier.selectGame(id),
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: border, width: 1.5),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(icon, size: 32, color: iconColor),
+                      const SizedBox(height: 10),
+                      Text(
+                        name,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );
@@ -1422,6 +1445,59 @@ class PlayMarketScreen extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMarketClosedView(String marketName) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1F2937),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: AppColors.statusRed.withValues(alpha: 0.3), width: 1.5),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFF2D1A1F),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.lock_clock,
+                color: AppColors.statusRed,
+                size: 54,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              '${marketName.toUpperCase()} IS CLOSED',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'This market is closed for today. Bidding is disabled until the next session opens. Please try another market or check back tomorrow.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFF9CA3AF),
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
