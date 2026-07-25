@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ic_stat_king_wins.xml
+  ─────────────────────
+  Android notification small icon for King Wins.
+
+  Requirements met:
+  • Monochrome white fill (#FFFFFFFF) — system applies tint/accent
+  • Transparent background
+  • Crown + shield silhouette readable at 24dp
+  • No text, no gradient, no gold, no bitmap, no thin lines
+  • Follows Android notification-icon specification
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!--
+        Shield body
+        A hexagonal shield shape centred in the viewport.
+        Starts at top-centre, sweeps around clockwise to form
+        a classic heraldic shield / crest outline.
+    -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="
+          M50,95
+          C50,95 10,72 10,45
+          L10,25
+          C10,22 12,20 15,20
+          L85,20
+          C88,20 90,22 90,25
+          L90,45
+          C90,72 50,95 50,95
+          Z" />
+
+    <!--
+        Crown sitting on top of the shield.
+        Five points: left outer, left inner, centre top, right inner, right outer.
+        Base band sits on top edge of shield (y≈20).
+    -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="
+          M18,20
+          L18,12
+          L28,18
+          L38,4
+          L50,16
+          L62,4
+          L72,18
+          L82,12
+          L82,20
+          Z" />
+
+</vector>

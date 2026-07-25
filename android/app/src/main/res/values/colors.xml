@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      notification_gold
+      Dark gold accent used as the Firebase default notification colour.
+      Chosen to remain visible against both light and dark Android notification
+      surfaces. The exact swatch (#A06009) is a deep amber-gold from the
+      King Wins brand palette.
+    -->
+    <color name="notification_gold">#A06009</color>
+	<color name="ic_launcher_background">#FFF9E8</color>
+</resources>
