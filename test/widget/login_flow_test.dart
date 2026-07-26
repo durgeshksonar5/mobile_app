@@ -1,42 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:king_wins_mobile_app/core/config/app_config.dart';
+import 'package:king_wins_mobile_app/app/dependency_injection/providers.dart';
+import 'package:king_wins_mobile_app/features/auth/data/repositories/auth_repository.dart';
+import 'package:king_wins_mobile_app/features/auth/domain/models/user_model.dart';
 import 'package:king_wins_mobile_app/features/auth/presentation/screens/login_screen.dart';
-import 'package:king_wins_mobile_app/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:king_wins_mobile_app/features/auth/data/services/firebase_auth_service.dart';
+import 'package:king_wins_mobile_app/core/errors/app_exception.dart';
 
-class FakeFailingFirebaseAuthService implements FirebaseAuthService {
+class FakeFailingAuthRepository implements AuthRepository {
   @override
-  Future<void> verifyPhoneNumber({
+  Future<UserModel> login({
     required String phoneNumber,
-    required Function(String verificationId, int? resendToken) onCodeSent,
-    required Function(FirebaseAuthException exception) onVerificationFailed,
-    required Function(PhoneAuthCredential credential) onVerificationCompleted,
-    required Function(String verificationId) onAutoRetrievalTimeout,
+    required String password,
   }) async {
-    onVerificationFailed(
-      FirebaseAuthException(
-        code: 'invalid-phone-number',
-        message: 'The provided phone number is not valid.',
-      ),
-    );
+    throw const ServerException('Invalid phone number or password.', 401);
   }
 
   @override
-  Future<UserCredential> signInWithCredential(PhoneAuthCredential credential) async {
-    throw FirebaseAuthException(
-      code: 'invalid-verification-code',
-      message: 'OTP verification failed.',
-    );
+  Future<Map<String, dynamic>> register({
+    required String phoneNumber,
+    required String password,
+    required String name,
+  }) async {
+    return {'success': false, 'message': 'Registration failed.'};
   }
 
   @override
-  Future<String?> getCurrentIdToken() async => null;
+  Future<UserModel> firebaseLogin({
+    required String idToken,
+    String? name,
+    String? password,
+    bool isRegister = false,
+  }) async {
+    throw UnimplementedError();
+  }
 
   @override
-  Future<void> signOut() async {}
+  Future<UserModel?> getProfile() async => null;
+
+  @override
+  Future<UserModel> updateProfile(Map<String, dynamic> data) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> logout() async {}
 }
 
 void main() {
@@ -49,7 +58,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          firebaseAuthServiceProvider.overrideWithValue(FakeFailingFirebaseAuthService()),
+          authRepositoryProvider.overrideWithValue(FakeFailingAuthRepository()),
         ],
         child: const MaterialApp(
           home: LoginScreen(),
@@ -60,7 +69,7 @@ void main() {
 
     final button = find.byType(ElevatedButton).first;
     await tester.tap(button);
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
 
     expect(find.text('Please fill in all fields.'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
@@ -71,7 +80,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          firebaseAuthServiceProvider.overrideWithValue(FakeFailingFirebaseAuthService()),
+          authRepositoryProvider.overrideWithValue(FakeFailingAuthRepository()),
         ],
         child: const MaterialApp(
           home: LoginScreen(),
@@ -80,15 +89,21 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 100));
 
-    final phoneFinder = find.byType(TextField).first;
-    await tester.enterText(phoneFinder, '9876543210');
+    // Fill in Phone
+    final loginFinder = find.byType(TextField).first;
+    await tester.enterText(loginFinder, '9876543210');
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Fill in Password
+    final passFinder = find.byType(TextField).last;
+    await tester.enterText(passFinder, 'WrongPassword123');
     await tester.pump(const Duration(milliseconds: 100));
 
     final button = find.byType(ElevatedButton).first;
     await tester.tap(button);
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
 
-    expect(find.text('The provided phone number is not valid.'), findsOneWidget);
+    expect(find.text('Invalid phone number or password.'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 }

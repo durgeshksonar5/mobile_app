@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'route_paths.dart';
 import 'route_names.dart';
 import '../../features/auth/presentation/view_models/auth_view_model.dart';
-import '../../features/auth/presentation/screens/phone_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/account_blocked_screen.dart';
@@ -49,7 +49,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RoutePaths.login,
         name: RouteNames.login,
-        builder: (context, state) => const PhoneScreen(),
+        builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
         path: RoutePaths.otp,

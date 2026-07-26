@@ -22,6 +22,14 @@ void main() {
           Validators.validatePhone(''), equals('Please fill in all fields.'));
     });
 
+    test('validateEmail returns null for valid email and error for invalid email', () {
+      expect(Validators.validateEmail('agent@example.com'), isNull);
+      expect(Validators.validateEmail('invalid-email'),
+          equals('Please enter a valid email address.'));
+      expect(Validators.validateEmail(''),
+          equals('Please fill in all fields.'));
+    });
+
     test('validatePassword validates minimum character length', () {
       expect(Validators.validatePassword('123456', minLength: 6), isNull);
       expect(Validators.validatePassword('123', minLength: 6),

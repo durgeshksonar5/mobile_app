@@ -11,9 +11,14 @@ class AuthRepository {
 
   AuthRepository(this._authService, this._secureStorage, this._preferences);
 
-  Future<UserModel> login(String phone, String password) async {
-    final res =
-        await _authService.login(phoneNumber: phone, password: password);
+  Future<UserModel> login({
+    required String phoneNumber,
+    required String password,
+  }) async {
+    final res = await _authService.login(
+      phoneNumber: phoneNumber,
+      password: password,
+    );
     final access = res['access'] as String?;
     final refresh = res['refresh'] as String?;
     final userJson = res['user'] as Map<String, dynamic>?;
@@ -29,6 +34,31 @@ class AuthRepository {
       return user;
     }
     throw Exception('Invalid login response payload.');
+  }
+
+  Future<Map<String, dynamic>> register({
+    required String phoneNumber,
+    required String password,
+    required String name,
+  }) async {
+    final res = await _authService.register(
+      phoneNumber: phoneNumber,
+      password: password,
+      name: name,
+    );
+    final access = res['access'] as String?;
+    final refresh = res['refresh'] as String?;
+    final userJson = res['user'] as Map<String, dynamic>?;
+
+    if (access != null) {
+      await _secureStorage.saveAccessToken(access);
+      if (refresh != null) await _secureStorage.saveRefreshToken(refresh);
+    }
+    if (userJson != null) {
+      final user = UserModel.fromJson(userJson);
+      await _preferences.saveUser(user.toJson());
+    }
+    return res;
   }
 
   Future<UserModel> firebaseLogin({

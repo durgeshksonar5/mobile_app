@@ -16,6 +16,17 @@ class Validators {
     return clean;
   }
 
+  static String? validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please fill in all fields.';
+    }
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Please enter a valid email address.';
+    }
+    return null;
+  }
+
   static String? validatePhone(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Please fill in all fields.';

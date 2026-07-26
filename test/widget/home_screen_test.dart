@@ -24,7 +24,29 @@ class FakeAuthRepository implements AuthRepository {
   );
 
   @override
-  Future<UserModel> login(String phone, String password) async => dummyUser;
+  Future<UserModel> login({
+    required String phoneNumber,
+    required String password,
+  }) async => dummyUser;
+
+  @override
+  Future<Map<String, dynamic>> register({
+    required String phoneNumber,
+    required String password,
+    required String name,
+  }) async => {
+    'success': true,
+    'message': 'Agent registered successfully.',
+    'user': {
+      'id': '1',
+      'email': '',
+      'phone_number': phoneNumber,
+      'name': name,
+      'role': 'Agent',
+      'is_active': true,
+    }
+  };
+
   @override
   Future<UserModel> firebaseLogin(
           {required String idToken,

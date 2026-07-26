@@ -6,7 +6,6 @@ import '../../../../app/router/route_paths.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/validation/validators.dart';
-import '../controllers/auth_controller.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -16,11 +15,9 @@ class RegisterScreen extends ConsumerStatefulWidget {
 }
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
-  int _step = 1;
-  final _nameController = TextEditingController();
+  final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _otpController = TextEditingController();
 
   bool _showPassword = false;
   String? _infoMessage;
@@ -28,79 +25,63 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _fullNameController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
-    _otpController.dispose();
     super.dispose();
   }
 
-  void _handleSendOtp() async {
+  void _handleRegister() async {
     setState(() {
       _localError = null;
       _infoMessage = null;
     });
 
-    final nameErr = _nameController.text.trim().isEmpty
-        ? 'Please fill in all fields.'
-        : null;
-    final phoneErr = Validators.validatePhone(_phoneController.text);
-    final passErr =
-        Validators.validatePassword(_passwordController.text, minLength: 6);
+    final fullName = _fullNameController.text.trim();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text;
 
-    if (nameErr != null || phoneErr != null || passErr != null) {
+    if (fullName.isEmpty) {
       setState(() {
-        _localError = nameErr ?? phoneErr ?? passErr;
+        _localError = 'Full Name is required.';
       });
       return;
     }
 
-    final formattedPhone = Validators.formatPhoneNumber(_phoneController.text);
-    await ref.read(authControllerProvider.notifier).sendOtp(formattedPhone);
-
-    if (mounted) {
-      final state = ref.read(authControllerProvider);
-      if (state.error != null) {
-        setState(() {
-          _localError = state.error;
-        });
-      } else if (state.isCodeSent) {
-        setState(() {
-          _step = 2;
-          _infoMessage = 'Verification code sent to your phone number via SMS.';
-        });
-      }
-    }
-  }
-
-  void _handleVerifyOtp() async {
-    setState(() {
-      _localError = null;
-    });
-
-    final otpErr = Validators.validateOtp(_otpController.text);
-    if (otpErr != null) {
+    final phoneErr = Validators.validatePhone(phone);
+    if (phoneErr != null) {
       setState(() {
-        _localError = otpErr;
+        _localError = phoneErr;
+      });
+      return;
+    }
+    final sanitizedPhone = Validators.formatPhoneNumber(phone);
+
+    final passErr = Validators.validatePassword(password, minLength: 6);
+    if (passErr != null) {
+      setState(() {
+        _localError = passErr;
       });
       return;
     }
 
-    final success = await ref.read(authControllerProvider.notifier).verifyOtpAndRegister(
-      _otpController.text.trim(),
-      _nameController.text.trim(),
-      _passwordController.text.trim(),
-    );
+    final success = await ref.read(authViewModelProvider.notifier).register(
+          phoneNumber: sanitizedPhone,
+          password: password,
+          name: fullName,
+        );
 
     if (mounted && success) {
       setState(() {
-        _infoMessage = 'Registration complete! Redirecting...';
+        _infoMessage = 'User registered successfully. Logging in...';
       });
-      Future.delayed(const Duration(milliseconds: 1000), () {
-        if (mounted) context.go(RoutePaths.home);
+      Future.delayed(const Duration(milliseconds: 1200), () {
+        if (mounted) {
+          context.go(RoutePaths.home);
+        }
       });
     } else if (mounted) {
-      final state = ref.read(authControllerProvider);
+      final state = ref.read(authViewModelProvider);
       setState(() {
         _localError = state.error ?? 'Registration failed.';
       });
@@ -153,48 +134,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           end: Alignment.centerRight,
                         ),
                       ),
-                      child: Stack(
-                        children: [
-                          if (_step == 2)
-                            Positioned(
-                              left: 0,
-                              top: 0,
-                              child: IconButton(
-                                icon: const Icon(Icons.arrow_back,
-                                    color: AppColors.textPrimary),
-                                onPressed: () {
-                                  setState(() {
-                                    _step = 1;
-                                    _localError = null;
-                                  });
-                                },
+                      child: Center(
+                        child: Column(
+                          children: const [
+                            Text(
+                              'KING WIN',
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.textPrimary,
+                                letterSpacing: 1.2,
                               ),
                             ),
-                          Center(
-                            child: Column(
-                              children: const [
-                                Text(
-                                  'KING WIN',
-                                  style: TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w900,
-                                    color: AppColors.textPrimary,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Trusted Satta Matka Experience',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                              ],
+                            SizedBox(height: 4),
+                            Text(
+                              'Trusted Satta Matka Experience',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
 
@@ -204,10 +166,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            _step == 1 ? 'Create Account' : 'Verify Phone',
+                          const Text(
+                            'Create Account',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
                               color: AppColors.textDark,
@@ -274,179 +236,115 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 ],
                               ),
                             ),
-                          if (_step == 1) ...[
-                            // Full Name Input
-                            const Text(
-                              'Full Name',
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary),
-                            ),
-                            const SizedBox(height: 6),
-                            TextField(
-                              controller: _nameController,
-                              enabled: !authState.isLoading,
-                              decoration: const InputDecoration(
-                                hintText: 'Enter your name',
-                                prefixIcon: Icon(Icons.person,
-                                    size: 20, color: AppColors.textMuted),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
 
-                            // Phone Input
-                            const Text(
-                              'Phone Number',
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary),
+                          // Full Name Input
+                          const Text(
+                            'Full Name',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary),
+                          ),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: _fullNameController,
+                            enabled: !authState.isLoading,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: const InputDecoration(
+                              hintText: 'Enter full name',
+                              prefixIcon: Icon(Icons.person_outline,
+                                  size: 20, color: AppColors.textMuted),
                             ),
-                            const SizedBox(height: 6),
-                            TextField(
-                              controller: _phoneController,
-                              keyboardType: TextInputType.phone,
-                              enabled: !authState.isLoading,
-                              decoration: const InputDecoration(
-                                hintText: 'Enter 10-digit number',
-                                prefixIcon: Icon(Icons.phone_android,
-                                    size: 20, color: AppColors.textMuted),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
+                          ),
+                          const SizedBox(height: 14),
 
-                            // Password Input
-                            const Text(
-                              'Password',
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary),
+                           // Phone Input
+                          const Text(
+                            'Phone Number',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary),
+                          ),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            enabled: !authState.isLoading,
+                            decoration: const InputDecoration(
+                              hintText: 'Enter 10-digit number',
+                              prefixIcon: Icon(Icons.phone_android_outlined,
+                                  size: 20, color: AppColors.textMuted),
                             ),
-                            const SizedBox(height: 6),
-                            TextField(
-                              controller: _passwordController,
-                              obscureText: !_showPassword,
-                              enabled: !authState.isLoading,
-                              decoration: InputDecoration(
-                                hintText: 'Create a password (min 6 chars)',
-                                prefixIcon: const Icon(Icons.lock_outline,
-                                    size: 20, color: AppColors.textMuted),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _showPassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    size: 20,
-                                    color: AppColors.textMuted,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _showPassword = !_showPassword;
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
+                          ),
+                          const SizedBox(height: 14),
 
-                            // Send OTP Button
-                            Container(
-                              height: 52,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    AppColors.primaryGold,
-                                    AppColors.primaryGoldLight
-                                  ],
+                          // Password Input
+                          const Text(
+                            'Password',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary),
+                          ),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: _passwordController,
+                            obscureText: !_showPassword,
+                            enabled: !authState.isLoading,
+                            decoration: InputDecoration(
+                              hintText: 'Create a password (min 6 chars)',
+                              prefixIcon: const Icon(Icons.lock_outline,
+                                  size: 20, color: AppColors.textMuted),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _showPassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  size: 20,
+                                  color: AppColors.textMuted,
                                 ),
-                                borderRadius:
-                                    BorderRadius.circular(AppSpacing.radiusXl),
-                              ),
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                ),
-                                onPressed: _handleSendOtp,
-                                child: const Text(
-                                  'Send OTP',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textWhite),
-                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _showPassword = !_showPassword;
+                                  });
+                                },
                               ),
                             ),
-                          ] else ...[
-                            Text(
-                              "We've sent a code to ${_phoneController.text}",
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  color: AppColors.textSecondary, fontSize: 14),
-                            ),
-                            const SizedBox(height: 16),
+                          ),
+                          const SizedBox(height: 24),
 
-                            const Text(
-                              'Enter OTP Code',
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary),
+                          // Register Button
+                          Container(
+                            height: 52,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  AppColors.primaryGold,
+                                  AppColors.primaryGoldLight
+                                ],
+                              ),
+                              borderRadius:
+                                  BorderRadius.circular(AppSpacing.radiusXl),
                             ),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _otpController,
-                              keyboardType: TextInputType.number,
-                              maxLength: 6,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 8,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
                               ),
-                              decoration: const InputDecoration(
-                                hintText: '123456',
-                                counterText: '',
-                              ),
+                              onPressed: authState.isLoading ? null : _handleRegister,
+                              child: authState.isLoading
+                                  ? const CircularProgressIndicator(
+                                      color: AppColors.textWhite)
+                                  : const Text(
+                                      'Register',
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.textWhite),
+                                    ),
                             ),
-                            const SizedBox(height: 24),
-
-                            // Verify Button
-                            Container(
-                              height: 52,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    AppColors.primaryGold,
-                                    AppColors.primaryGoldLight
-                                  ],
-                                ),
-                                borderRadius:
-                                    BorderRadius.circular(AppSpacing.radiusXl),
-                              ),
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                ),
-                                onPressed: authState.isLoading
-                                    ? null
-                                    : _handleVerifyOtp,
-                                child: authState.isLoading
-                                    ? const CircularProgressIndicator(
-                                        color: AppColors.textWhite)
-                                    : const Text(
-                                        'Verify & Register',
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.textWhite),
-                                      ),
-                              ),
-                            ),
-                          ],
+                          ),
                           const SizedBox(height: 20),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,

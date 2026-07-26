@@ -7,6 +7,7 @@ class MarketResult {
   final String openTime;
   final String closeTime;
   final bool isActive;
+  final String openDays;
 
   const MarketResult({
     required this.id,
@@ -16,6 +17,7 @@ class MarketResult {
     required this.openTime,
     required this.closeTime,
     this.isActive = true,
+    this.openDays = '',
   });
 
   factory MarketResult.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,7 @@ class MarketResult {
       openTime: (json['open_time'] ?? '').toString(),
       closeTime: (json['close_time'] ?? '').toString(),
       isActive: parseBool(json['is_active']),
+      openDays: (json['open_days'] ?? json['open_day'] ?? '').toString(),
     );
   }
 
@@ -81,6 +84,23 @@ class MarketResult {
 
   /// Calculates display info (result text, status text, color, play availability)
   MarketDisplayInfo getDisplayInfo(String todayStr, DateTime referenceDate) {
+    final weekdaysMap = {
+      1: 'Mon',
+      2: 'Tue',
+      3: 'Wed',
+      4: 'Thu',
+      5: 'Fri',
+      6: 'Sat',
+      7: 'Sun',
+    };
+    final currentDayAbbr = weekdaysMap[referenceDate.weekday] ?? '';
+    final isOpenToday = openDays.trim().isEmpty ||
+        openDays
+            .toLowerCase()
+            .split(',')
+            .map((e) => e.trim().toLowerCase())
+            .contains(currentDayAbbr.toLowerCase());
+
     final isToday = resultDate == todayStr;
     final isDeclared = isToday && isValueDeclared(resultValue);
 
@@ -103,16 +123,24 @@ class MarketResult {
 
     String statusText;
     String statusType;
+    bool canPlay;
 
-    if (closeTimeArrived) {
+    if (!isOpenToday) {
+      statusText = 'Market is closed for today';
+      statusType = 'closed';
+      canPlay = false;
+    } else if (closeTimeArrived) {
       statusText = 'Market Closed';
       statusType = 'closed';
+      canPlay = false;
     } else if (openTimeArrived) {
       statusText = 'Running Close';
       statusType = 'running_close';
+      canPlay = true;
     } else {
       statusText = 'Market Running';
       statusType = 'running';
+      canPlay = true;
     }
 
     final formattedValue =
@@ -122,7 +150,7 @@ class MarketResult {
       resultValue: formattedValue,
       statusText: statusText,
       statusType: statusType,
-      canPlay: !closeTimeArrived,
+      canPlay: canPlay,
     );
   }
 

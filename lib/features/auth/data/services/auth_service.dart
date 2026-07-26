@@ -39,6 +39,50 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> register({
+    required String phoneNumber,
+    required String password,
+    required String name,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post('/auth/agent/register/', data: {
+        'phone_number': phoneNumber,
+        'password': password,
+        'name': name,
+      });
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      String errorMsg = 'Registration failed.';
+      if (e.response?.data != null) {
+        final data = e.response!.data;
+        if (data is Map<String, dynamic>) {
+          if (data['detail'] is String) {
+            errorMsg = data['detail'];
+          } else if (data['error'] is String) {
+            errorMsg = data['error'];
+          } else if (data['message'] is String) {
+            errorMsg = data['message'];
+          } else if (data['non_field_errors'] is List) {
+            errorMsg = (data['non_field_errors'] as List).join(', ');
+          } else {
+            final errorList = <String>[];
+            data.forEach((key, val) {
+              if (val is List) {
+                errorList.add('$key: ${val.join(", ")}');
+              } else if (val is String) {
+                errorList.add('$key: $val');
+              }
+            });
+            if (errorList.isNotEmpty) {
+              errorMsg = errorList.join('\n');
+            }
+          }
+        }
+      }
+      throw ServerException(errorMsg, e.response?.statusCode);
+    }
+  }
+
   Future<Map<String, dynamic>> firebaseLogin({
     required String idToken,
     String? name,

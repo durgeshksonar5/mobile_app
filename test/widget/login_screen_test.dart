@@ -19,7 +19,29 @@ class FakeAuthRepository implements AuthRepository {
   );
 
   @override
-  Future<UserModel> login(String phone, String password) async => dummyUser;
+  Future<UserModel> login({
+    required String phoneNumber,
+    required String password,
+  }) async => dummyUser;
+
+  @override
+  Future<Map<String, dynamic>> register({
+    required String phoneNumber,
+    required String password,
+    required String name,
+  }) async => {
+    'success': true,
+    'message': 'Agent registered successfully.',
+    'user': {
+      'id': '1',
+      'email': '',
+      'phone_number': phoneNumber,
+      'name': name,
+      'role': 'Agent',
+      'is_active': true,
+    }
+  };
+
   @override
   Future<UserModel> firebaseLogin(
           {required String idToken,
@@ -83,8 +105,7 @@ void main() {
     expect((imageWidget.image as AssetImage).assetName,
         'assets/images/king-win-logo-transferent-crop.png');
     expect(find.text('Trusted Satta Matka Experience'), findsOneWidget);
-    expect(find.text('Sign In with Phone'), findsOneWidget);
-    expect(find.text('Get OTP Verification'), findsOneWidget);
-    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('Sign In'), findsNWidgets(2));
+    expect(find.byType(TextField), findsNWidgets(2));
   });
 }
