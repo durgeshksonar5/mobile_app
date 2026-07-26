@@ -5,7 +5,6 @@ import 'route_paths.dart';
 import 'route_names.dart';
 import '../../features/auth/presentation/view_models/auth_view_model.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
-import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/account_blocked_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
@@ -22,7 +21,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isBlocked = authState.isBlocked;
       final isLoggingIn = state.matchedLocation == RoutePaths.login;
       final isRegistering = state.matchedLocation == RoutePaths.register;
-      final isOtp = state.matchedLocation == RoutePaths.otp;
 
       if (isBlocked) {
         if (state.matchedLocation != RoutePaths.accountBlocked) {
@@ -34,12 +32,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (!isAuth &&
           !isLoggingIn &&
           !isRegistering &&
-          !isOtp &&
           state.matchedLocation != RoutePaths.accountBlocked) {
         return RoutePaths.login;
       }
 
-      if (isAuth && (isLoggingIn || isRegistering || isOtp)) {
+      if (isAuth && (isLoggingIn || isRegistering)) {
         return RoutePaths.home;
       }
 
@@ -50,11 +47,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.login,
         name: RouteNames.login,
         builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: RoutePaths.otp,
-        name: RouteNames.otp,
-        builder: (context, state) => const OtpScreen(),
       ),
       GoRoute(
         path: RoutePaths.register,
