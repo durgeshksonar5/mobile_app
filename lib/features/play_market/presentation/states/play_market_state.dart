@@ -61,8 +61,15 @@ class PlayMarketState {
       if (len < 4) return 0;
       return PannaGenerator.getDpMotorFactor(len);
     } else if (activeGame == 'sp-dp-tp') {
-      return PannaGenerator.getSpDpTpPannas(spDpTpAnk, spDpTpChoices).length;
+      int factor = 0;
+      for (final choice in spDpTpChoices) {
+        if (choice == 'SP') factor += 12;
+        if (choice == 'DP') factor += 9;
+        if (choice == 'TP') factor += 10;
+      }
+      return selectedNumbers.length * factor;
     } else if (activeGame == 'family-panel') {
+      if (!PannaGenerator.isValidPanna(familyPanna)) return 0;
       return PannaGenerator.getFamilyPannas(familyPanna).length;
     } else if (activeGame == 'half-sagam') {
       if (halfPanna.length == 3 && halfDigit.length == 1) return 1;

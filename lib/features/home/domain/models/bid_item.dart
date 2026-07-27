@@ -7,7 +7,35 @@ class BidItem {
   final String selectedNumber;
   final int amount;
   final String status; // 'Active', 'WON', 'LOST'
+  final int winAmount;
   final DateTime createdAt;
+
+  int get baseAmount {
+    final gType = gameType.toUpperCase();
+    if (gType == 'SP MOTOR') {
+      final digits = selectedNumber.split('').toSet().length;
+      final factors = {4: 4, 5: 10, 6: 20, 7: 35, 8: 56, 9: 84, 10: 120};
+      final factor = factors[digits] ?? 1;
+      return (amount / factor).round();
+    } else if (gType == 'DP MOTOR') {
+      final digits = selectedNumber.split('').toSet().length;
+      final factors = {4: 12, 5: 20, 6: 30, 7: 42, 8: 56, 9: 72, 10: 90};
+      final factor = factors[digits] ?? 1;
+      return (amount / factor).round();
+    } else if (gType == 'FAMILY PANEL') {
+      final digits = selectedNumber.split('').toSet().length;
+      final factor = digits == 3 ? 8 : (digits == 2 ? 6 : 4);
+      return (amount / factor).round();
+    } else if (gType == 'SP DP TP') {
+      final parts = selectedNumber.split('-');
+      if (parts.length == 2) {
+        final choice = parts[1].toUpperCase();
+        final factor = choice == 'SP' ? 12 : (choice == 'DP' ? 9 : 10);
+        return (amount / factor).round();
+      }
+    }
+    return amount;
+  }
 
   const BidItem({
     required this.id,
@@ -17,6 +45,7 @@ class BidItem {
     required this.selectedNumber,
     required this.amount,
     this.status = 'Active',
+    this.winAmount = 0,
     required this.createdAt,
   });
 
@@ -32,6 +61,9 @@ class BidItem {
       selectedNumber: (json['selected_number'] ?? '').toString(),
       amount: amt.toInt(),
       status: (json['status'] ?? 'Active').toString(),
+      winAmount: json['win_amount'] != null
+          ? (num.tryParse(json['win_amount'].toString()) ?? 0).toInt()
+          : 0,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -47,6 +79,7 @@ class BidItem {
       'selected_number': selectedNumber,
       'amount': amount,
       'status': status,
+      'win_amount': winAmount,
       'created_at': createdAt.toIso8601String(),
     };
   }

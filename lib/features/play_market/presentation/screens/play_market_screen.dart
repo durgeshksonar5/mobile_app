@@ -863,9 +863,10 @@ class PlayMarketScreen extends ConsumerWidget {
           ),
           itemCount: 10,
           itemBuilder: (context, index) {
-            final isSelected = state.spDpTpAnk == index;
+            final digitStr = index.toString();
+            final isSelected = state.selectedNumbers.contains(digitStr);
             return GestureDetector(
-              onTap: () => notifier.setSpDpTpAnk(index),
+              onTap: () => notifier.toggleSelectedNumber(digitStr),
               child: Container(
                 decoration: BoxDecoration(
                   color: isSelected
@@ -880,7 +881,7 @@ class PlayMarketScreen extends ConsumerWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  '$index',
+                  digitStr,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -990,6 +991,18 @@ class PlayMarketScreen extends ConsumerWidget {
           ),
           onChanged: (val) => notifier.setFamilyPanna(val),
         ),
+        if (state.familyPanna.length == 3 &&
+            !PannaGenerator.isValidPanna(state.familyPanna))
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'Invalid Panna! Digits must be in ascending order (where 0 is 10, e.g. 778 instead of 787).',
+              style: TextStyle(
+                  color: Colors.red[400],
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold),
+            ),
+          ),
         const SizedBox(height: 16),
         if (familyList.isNotEmpty) ...[
           Text(

@@ -12,6 +12,12 @@ class PannaGenerator {
     return digits.map((d) => d == 10 ? '0' : d.toString()).join('');
   }
 
+  static bool isValidPanna(String panna) {
+    if (panna.length != 3 || int.tryParse(panna) == null) return false;
+    return panna == sortPanna(panna);
+  }
+
+
   static List<String> getFamilyPannas(String panna) {
     if (panna.length != 3 || int.tryParse(panna) == null) return [];
     final digits = panna.split('').map((d) => int.parse(d)).toList();

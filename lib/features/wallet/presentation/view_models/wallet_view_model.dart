@@ -3,18 +3,20 @@ import '../../domain/models/wallet_balance.dart';
 import '../../domain/repositories/wallet_repository.dart';
 import '../states/wallet_state.dart';
 import '../../../../app/dependency_injection/providers.dart';
+import '../../../auth/presentation/view_models/auth_view_model.dart';
 
 final walletViewModelProvider =
     StateNotifierProvider<WalletViewModel, WalletState>((ref) {
   final repository = ref.watch(walletRepositoryProvider);
-  return WalletViewModel(repository);
+  return WalletViewModel(repository, ref);
 });
 
 class WalletViewModel extends StateNotifier<WalletState> {
   final WalletRepository _repository;
+  final Ref _ref;
   DateTime? _lastFetchTime;
 
-  WalletViewModel(this._repository) : super(const WalletState());
+  WalletViewModel(this._repository, this._ref) : super(const WalletState());
 
   Future<void> fetchBalance({bool isRefresh = false}) async {
     if (!isRefresh &&
@@ -38,6 +40,9 @@ class WalletViewModel extends StateNotifier<WalletState> {
         balance: balance,
         clearError: true,
       );
+      _ref
+          .read(authViewModelProvider.notifier)
+          .updateWalletBalanceLocally(balance.availableBalance);
     } catch (e) {
       state = state.copyWith(
         status:

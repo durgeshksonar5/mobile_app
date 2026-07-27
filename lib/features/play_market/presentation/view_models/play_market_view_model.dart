@@ -182,35 +182,57 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
 
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      List<String> targets = [];
+      final List<_BidToPlace> bids = [];
+
       if (['single', 'jodi', 'single-panna', 'double-panna', 'triple-panna']
           .contains(state.activeGame)) {
-        targets = state.selectedNumbers;
+        for (final numStr in state.selectedNumbers) {
+          bids.add(_BidToPlace(numStr, amt));
+        }
       } else if (state.activeGame == 'sp-dp-tp') {
-        targets = PannaGenerator.getSpDpTpPannas(
-            state.spDpTpAnk, state.spDpTpChoices);
+        for (final numStr in state.selectedNumbers) {
+          for (final choice in state.spDpTpChoices) {
+            final choiceFactor = choice == 'SP' ? 12 : (choice == 'DP' ? 9 : 10);
+            bids.add(_BidToPlace('$numStr-$choice', amt * choiceFactor));
+          }
+        }
       } else if (state.activeGame == 'family-panel') {
-        targets = PannaGenerator.getFamilyPannas(state.familyPanna);
+        if (!PannaGenerator.isValidPanna(state.familyPanna)) {
+          state = state.copyWith(
+              isLoading: false,
+              error: 'Invalid Panna! Digits must be in ascending order (where 0 is 10, e.g. 778 instead of 787).');
+          return false;
+        }
+        final sorted = PannaGenerator.sortPanna(state.familyPanna);
+        final factor = PannaGenerator.getFamilyPannas(state.familyPanna).length;
+        bids.add(_BidToPlace(sorted, amt * factor));
       } else if (state.activeGame == 'sp-motor' ||
           state.activeGame == 'dp-motor') {
-        targets = [state.selectedNumber ?? ''];
+        final len = (state.selectedNumber ?? '').length;
+        final factor = state.activeGame == 'sp-motor'
+            ? PannaGenerator.getSpMotorFactor(len)
+            : PannaGenerator.getDpMotorFactor(len);
+        bids.add(_BidToPlace(state.selectedNumber ?? '', amt * factor));
       } else if (state.activeGame == 'half-sagam') {
-        targets = [
-          state.halfSangamType == 'open_panna_close_digit'
-              ? '${state.halfPanna}-${state.halfDigit}'
-              : '${state.halfDigit}-${state.halfPanna}'
-        ];
+        final sortedHalf = PannaGenerator.sortPanna(state.halfPanna);
+        final numStr = state.halfSangamType == 'open_panna_close_digit'
+            ? '$sortedHalf${state.halfDigit}'
+            : '${state.halfDigit}$sortedHalf';
+        bids.add(_BidToPlace(numStr, amt));
       } else if (state.activeGame == 'full-sagam') {
-        targets = ['${state.fullOpenPanna}-${state.fullClosePanna}'];
+        final sortedOpen = PannaGenerator.sortPanna(state.fullOpenPanna);
+        final sortedClose = PannaGenerator.sortPanna(state.fullClosePanna);
+        final numStr = '$sortedOpen$sortedClose';
+        bids.add(_BidToPlace(numStr, amt));
       }
 
-      for (final numStr in targets) {
+      for (final bid in bids) {
         await _repository.placeBid(
           marketName: marketName,
           gameType: state.activeGame.replaceAll('-', ' ').toUpperCase(),
           session: state.session.toUpperCase(),
-          selectedNumber: numStr,
-          amount: amt,
+          selectedNumber: bid.selectedNumber,
+          amount: bid.amount,
         );
       }
       _ref.read(walletViewModelProvider.notifier).fetchBalance(isRefresh: true);
@@ -221,4 +243,10 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
       return false;
     }
   }
+}
+
+class _BidToPlace {
+  final String selectedNumber;
+  final int amount;
+  _BidToPlace(this.selectedNumber, this.amount);
 }

@@ -1,3 +1,4 @@
+// ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,10 +21,12 @@ import '../widgets/add_fund_dialog.dart';
 import '../widgets/withdraw_dialog.dart';
 import '../widgets/notifications_dialog.dart';
 import '../../domain/models/app_notification.dart';
+import '../../../auth/domain/models/user_model.dart';
 import '../../../contact_sync/presentation/widgets/contact_disclosure.dart';
 import '../../../wallet/presentation/view_models/wallet_view_model.dart';
 import '../../../../app/dependency_injection/providers.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   final bool initialPermissionSkipped;
@@ -40,6 +43,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   int _passbookCurrentPage = 1;
   String _bidsFilter = 'all'; // 'all', 'win', 'loss', 'active'
   int _bidsCurrentPage = 1;
+  DateTime? _selectedBidsDate;
   String _fundsPassbookFilter = 'all';
   int _fundsPassbookCurrentPage = 1;
   List<AppNotification> _notifications =
@@ -167,8 +171,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       });
 
       if (status.isDenied) {
+        final prefs = await SharedPreferences.getInstance();
+        final hasShown = prefs.getBool('has_shown_sync_disclosure') ?? false;
         // Present Google Play compliant prominent disclosure dialog before native system dialog
-        if (mounted && !_isPermissionSkipped) {
+        if (mounted && !_isPermissionSkipped && !hasShown) {
           _showDisclosureDialog();
         }
       }
@@ -188,6 +194,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         return ContactDisclosure(
           onContinue: () async {
             Navigator.pop(dialogContext);
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('has_shown_sync_disclosure', true);
+            } catch (_) {}
             final requestResult = await Permission.contacts.request();
             debugPrint('Contacts permission request result: $requestResult');
             if (mounted) {
@@ -199,8 +209,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               }
             }
           },
-          onNotNow: () {
+          onNotNow: () async {
             Navigator.pop(dialogContext);
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('has_shown_sync_disclosure', true);
+            } catch (_) {}
             if (mounted) {
               setState(() {
                 _permissionStatus = PermissionStatus.denied;
@@ -228,6 +242,99 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         );
       },
     );
+  }
+
+  Future<void> _handleWithdrawClick(UserModel? user) async {
+    final status = await Permission.contacts.status;
+    if (status.isGranted || status.isLimited) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => WithdrawDialog(user: user),
+        );
+      }
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final hasSkippedWithdraw = prefs.getBool('has_skipped_withdraw_disclosure') ?? false;
+
+    if (hasSkippedWithdraw) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => WithdrawDialog(user: user),
+        );
+      }
+      return;
+    }
+
+    // Show prominent disclosure dialog
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return ContactDisclosure(
+            onContinue: () async {
+              Navigator.pop(dialogContext);
+              try {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('has_shown_sync_disclosure', true);
+              } catch (_) {}
+              final requestResult = await Permission.contacts.request();
+              debugPrint('Contacts permission request result: $requestResult');
+              if (mounted) {
+                setState(() {
+                  _permissionStatus = requestResult;
+                });
+                if (requestResult.isGranted || requestResult.isLimited) {
+                  await _syncContactsIfNeeded();
+                }
+                showDialog(
+                  context: context,
+                  builder: (context) => WithdrawDialog(user: user),
+                );
+              }
+            },
+            onNotNow: () async {
+              Navigator.pop(dialogContext);
+              try {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('has_skipped_withdraw_disclosure', true);
+              } catch (_) {}
+              if (mounted) {
+                showDialog(
+                  context: context,
+                  builder: (context) => WithdrawDialog(user: user),
+                );
+              }
+            },
+            onPrivacyPolicy: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: AppColors.surfaceDark,
+                  title: const Text('Privacy Policy', style: TextStyle(color: Colors.white)),
+                  content: const SingleChildScrollView(
+                    child: Text(
+                      'We collection your contacts to sync them with our servers for social and referral features. We do not share your contacts with third parties.',
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close', style: TextStyle(color: AppColors.primaryGold)),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+    }
   }
 
   Future<void> _syncContactsIfNeeded() async {
@@ -587,10 +694,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 _buildActionButton(
                   icon: Icons.arrow_circle_down,
                   label: 'Withdraw',
-                  onTap: () => showDialog(
-                    context: context,
-                    builder: (context) => WithdrawDialog(user: user),
-                  ),
+                  onTap: () => _handleWithdrawClick(user),
                 ),
                 _buildActionButton(
                   icon: Icons.history,
@@ -1026,11 +1130,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
 
     final filteredBids = state.bidsItems.where((bid) {
-      if (_bidsFilter == 'all') return true;
-      final statusLower = bid.status.toLowerCase();
-      if (_bidsFilter == 'win') return statusLower == 'won';
-      if (_bidsFilter == 'loss') return statusLower == 'lost';
-      if (_bidsFilter == 'active') return statusLower == 'active';
+      if (_bidsFilter != 'all') {
+        final statusLower = bid.status.toLowerCase();
+        if (_bidsFilter == 'win' && statusLower != 'won') return false;
+        if (_bidsFilter == 'loss' && statusLower != 'lost') return false;
+        if (_bidsFilter == 'active' && (statusLower != 'active' && statusLower != 'pending')) return false;
+      }
+      if (_selectedBidsDate != null) {
+        final bidDate = bid.createdAt;
+        if (bidDate.year != _selectedBidsDate!.year ||
+            bidDate.month != _selectedBidsDate!.month ||
+            bidDate.day != _selectedBidsDate!.day) {
+          return false;
+        }
+      }
       return true;
     }).toList();
 
@@ -1038,52 +1151,149 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final sortedBids = List<BidItem>.from(filteredBids)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-    final int itemsPerPage = 10;
-    final int totalItems = sortedBids.length;
-    final int totalPages = (totalItems / itemsPerPage).ceil();
-    final int safeTotalPages = totalPages == 0 ? 1 : totalPages;
+    int safeTotalPages = 1;
+    final List<BidItem> displayBids;
+    if (_selectedBidsDate != null) {
+      displayBids = sortedBids;
+    } else {
+      final int itemsPerPage = 10;
+      final int totalItems = sortedBids.length;
+      final int totalPages = (totalItems / itemsPerPage).ceil();
+      safeTotalPages = totalPages == 0 ? 1 : totalPages;
 
-    if (_bidsCurrentPage > safeTotalPages) {
-      _bidsCurrentPage = safeTotalPages;
+      if (_bidsCurrentPage > safeTotalPages) {
+        _bidsCurrentPage = safeTotalPages;
+      }
+
+      final int startIndex = (_bidsCurrentPage - 1) * itemsPerPage;
+      final int endIndex = (startIndex + itemsPerPage < totalItems)
+          ? startIndex + itemsPerPage
+          : totalItems;
+
+      displayBids = sortedBids.sublist(startIndex, endIndex);
     }
-
-    final int startIndex = (_bidsCurrentPage - 1) * itemsPerPage;
-    final int endIndex = (startIndex + itemsPerPage < totalItems)
-        ? startIndex + itemsPerPage
-        : totalItems;
-
-    final paginatedBids = sortedBids.sublist(startIndex, endIndex);
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.p16),
       children: [
-        // Bids Filter Chips
+        // Bids Filter Dropdown & Date Picker
         Row(
-          children: ['all', 'win', 'loss', 'active'].map((filter) {
-            final isActive = _bidsFilter == filter;
-            return Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: ChoiceChip(
-                label: Text(filter.toUpperCase()),
-                selected: isActive,
-                onSelected: (_) => setState(() {
-                  _bidsFilter = filter;
-                  _bidsCurrentPage = 1;
-                }),
-                selectedColor: AppColors.textDark,
-                labelStyle: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color:
-                      isActive ? AppColors.textWhite : AppColors.textSecondary,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1F2937),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF374151)),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _bidsFilter,
+                  dropdownColor: const Color(0xFF111827),
+                  icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryGold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'all', child: Text('ALL BIDS')),
+                    DropdownMenuItem(value: 'win', child: Text('WON BIDS')),
+                    DropdownMenuItem(value: 'loss', child: Text('LOST BIDS')),
+                    DropdownMenuItem(value: 'active', child: Text('ACTIVE BIDS')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _bidsFilter = val;
+                        _bidsCurrentPage = 1;
+                      });
+                    }
+                  },
                 ),
               ),
-            );
-          }).toList(),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextButton.icon(
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedBidsDate ?? DateTime.now(),
+                    firstDate: DateTime(2025),
+                    lastDate: DateTime.now(),
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.dark(
+                            primary: AppColors.primaryGold,
+                            onPrimary: AppColors.textPrimary,
+                            surface: Color(0xFF1F2937),
+                            onSurface: Colors.white,
+                          ),
+                          dialogTheme: const DialogThemeData(
+                            backgroundColor: Color(0xFF111827),
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _selectedBidsDate = picked;
+                    });
+                  }
+                },
+                icon: Icon(
+                  Icons.calendar_today,
+                  size: 14,
+                  color: _selectedBidsDate != null
+                      ? AppColors.primaryGold
+                      : Colors.white,
+                ),
+                label: Text(
+                  _selectedBidsDate == null
+                      ? 'SELECT DATE'
+                      : '${_selectedBidsDate!.day}/${_selectedBidsDate!.month}/${_selectedBidsDate!.year}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: _selectedBidsDate != null
+                        ? AppColors.primaryGold
+                        : Colors.white,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                  backgroundColor: const Color(0xFF1F2937),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(
+                      color: _selectedBidsDate != null
+                          ? AppColors.primaryGold
+                          : const Color(0xFF374151),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (_selectedBidsDate != null) ...[
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.clear, size: 18, color: AppColors.statusRed),
+                onPressed: () => setState(() {
+                  _selectedBidsDate = null;
+                }),
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+              ),
+            ]
+          ],
         ),
         const SizedBox(height: 14),
 
-        if (paginatedBids.isEmpty)
+        if (displayBids.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 32),
             child: Center(
@@ -1094,7 +1304,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
           )
         else ...[
-          ...paginatedBids.map((bid) {
+          ...displayBids.map((bid) {
             final statusLower = bid.status.toLowerCase();
             final isWon = statusLower == 'won';
             final isLost = statusLower == 'lost';
@@ -1106,79 +1316,163 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 : (isLost ? AppColors.statusRedBg : AppColors.borderLight);
 
             return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.surfaceWhite,
                 borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
                 border: Border.all(color: AppColors.borderLight),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(5),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
+                  // Row 1: Selected Number (Bid Number) | Market Name
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGoldBg,
-                          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          bid.selectedNumber,
-                          style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.primaryGold),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Row(
                         children: [
-                          Text(
-                            '${bid.marketName} - ${bid.gameType}',
-                            style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textDark),
+                          const Text(
+                            'Number: ',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                           Text(
-                            'Session: ${bid.session} | Number: ${bid.selectedNumber}',
+                            bid.selectedNumber,
                             style: const TextStyle(
-                                fontSize: 11, color: AppColors.textSecondary),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.primaryGold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        bid.marketName,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  
+                  // Row 2: Play Type (Game Type) | Session
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Play: ',
+                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                          Text(
+                            bid.gameType,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        'Session: ${bid.session}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Row 3: Status (Win/Loss) | Win Amount
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: statusBgColor,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          bid.status.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: statusColor,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          const Text(
+                            'Win Amt: ',
+                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                          Text(
+                            '₹${bid.winAmount}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              color: isWon ? AppColors.statusGreen : AppColors.textDark,
+                            ),
                           ),
                         ],
                       ),
                     ],
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  const SizedBox(height: 8),
+
+                  // Row 4: Bid Amount | Total Bid Amount
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '₹${bid.amount}',
-                        style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.textDark),
-                      ),
-                      const SizedBox(height: 2),
-                      Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: statusBgColor,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          bid.status,
-                          style: TextStyle(
-                              fontSize: 10,
+                      Row(
+                        children: [
+                          const Text(
+                            'Bid: ',
+                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                          Text(
+                            '₹${bid.baseAmount}',
+                            style: const TextStyle(
+                              fontSize: 13,
                               fontWeight: FontWeight.bold,
-                              color: statusColor),
-                        ),
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          const Text(
+                            'Total Ded: ',
+                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                          Text(
+                            '₹${bid.amount}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -1186,11 +1480,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
             );
           }),
-          _buildPagination(
-            currentPage: _bidsCurrentPage,
-            totalPages: safeTotalPages,
-            onPageChanged: (page) => setState(() => _bidsCurrentPage = page),
-          ),
+          if (_selectedBidsDate == null)
+            _buildPagination(
+              currentPage: _bidsCurrentPage,
+              totalPages: safeTotalPages,
+              onPageChanged: (page) => setState(() => _bidsCurrentPage = page),
+            ),
         ],
       ],
     );
@@ -1277,9 +1572,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
                 icon: const Icon(Icons.arrow_circle_down, size: 22),
                 label: const Text('Withdraw Points'),
-                onPressed: () => showDialog(
-                    context: context,
-                    builder: (context) => WithdrawDialog(user: user)),
+                onPressed: () => _handleWithdrawClick(user),
               ),
             ),
           ],

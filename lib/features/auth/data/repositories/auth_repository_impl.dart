@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/entities/authenticated_user.dart';
 import '../../domain/entities/auth_session.dart';
@@ -112,6 +113,11 @@ class AuthRepositoryImpl implements AuthRepository {
     }
     await _secureStorage.clearTokens();
     await _preferences.clearUserProfile();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('has_shown_sync_disclosure');
+      await prefs.remove('has_skipped_withdraw_disclosure');
+    } catch (_) {}
   }
 
   @override

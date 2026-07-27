@@ -161,4 +161,11 @@ class AuthViewModel extends StateNotifier<AuthState> {
   void resetBlocked() {
     state = state.copyWith(isBlocked: false, clearError: true);
   }
+
+  void updateWalletBalanceLocally(int newBalance) {
+    if (state.user != null) {
+      state = state.copyWith(
+          user: state.user!.copyWith(walletBalance: newBalance));
+    }
+  }
 }
