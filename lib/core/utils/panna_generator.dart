@@ -96,4 +96,30 @@ class PannaGenerator {
     }
     return pannas;
   }
+
+  static List<String> getJodiFamilyMembers(String jodi) {
+    if (jodi.length != 2 || int.tryParse(jodi) == null) return [];
+    final d1 = int.parse(jodi[0]);
+    final d2 = int.parse(jodi[1]);
+    final d1Opts = [d1, (d1 + 5) % 10];
+    final d2Opts = [d2, (d2 + 5) % 10];
+    final Set<String> unique = {};
+    for (final x in d1Opts) {
+      for (final y in d2Opts) {
+        unique.add('$x$y');
+        unique.add('$y$x');
+      }
+    }
+    return unique.toList()..sort();
+  }
+
+  static List<String> getCPPannas(String digits) {
+    if (digits.length != 2 || int.tryParse(digits) == null) return [];
+    final Set<String> unique = {};
+    for (int i = 0; i <= 9; i++) {
+      final combined = '$digits$i';
+      unique.add(sortPanna(combined));
+    }
+    return unique.toList()..sort();
+  }
 }

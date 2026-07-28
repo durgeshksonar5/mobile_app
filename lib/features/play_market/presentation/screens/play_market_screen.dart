@@ -135,7 +135,7 @@ class PlayMarketScreen extends ConsumerWidget {
       },
       {
         'id': 'sp-motor',
-        'name': 'SP Motor',
+        'name': '(mpsp) SP Motor',
         'icon': Icons.memory,
         'color': const Color(0xFF112A34),
         'border': const Color(0xFF22D3EE),
@@ -143,7 +143,7 @@ class PlayMarketScreen extends ConsumerWidget {
       },
       {
         'id': 'dp-motor',
-        'name': 'DP Motor',
+        'name': '(mpdp) DP Motor',
         'icon': Icons.album,
         'color': const Color(0xFF1B2D1B),
         'border': const Color(0xFF4ADE80),
@@ -156,6 +156,22 @@ class PlayMarketScreen extends ConsumerWidget {
         'color': const Color(0xFF332014),
         'border': const Color(0xFFFB923C),
         'iconColor': const Color(0xFFFFEDD5),
+      },
+      {
+        'id': 'cp',
+        'name': 'Cycle Panna',
+        'icon': Icons.sync,
+        'color': const Color(0xFF1E2833),
+        'border': const Color(0xFF64748B),
+        'iconColor': const Color(0xFFCBD5E1),
+      },
+      {
+        'id': 'family-jodi',
+        'name': 'Family Jodi',
+        'icon': Icons.group_work,
+        'color': const Color(0xFF2E1A29),
+        'border': const Color(0xFFD946EF),
+        'iconColor': const Color(0xFFF5D0FE),
       },
       {
         'id': 'family-panel',
@@ -482,6 +498,10 @@ class PlayMarketScreen extends ConsumerWidget {
         return _buildMotorPad(state, notifier, isSp: false);
       case 'sp-dp-tp':
         return _buildSpDpTpPad(state, notifier);
+      case 'cp':
+        return _buildCPPad(state, notifier);
+      case 'family-jodi':
+        return _buildFamilyJodiPad(state, notifier);
       case 'family-panel':
         return _buildFamilyPanelPad(state, notifier);
       case 'half-sagam':
@@ -1511,6 +1531,141 @@ class PlayMarketScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCPPad(PlayMarketState state, PlayMarketViewModel notifier) {
+    final cpList = PannaGenerator.getCPPannas(state.selectedNumber ?? '');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Enter 2-Digit Base Number for Cycle Panna (CP):',
+          style: TextStyle(
+              fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          keyboardType: TextInputType.number,
+          maxLength: 2,
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 18),
+          decoration: InputDecoration(
+            counterText: '',
+            hintText: 'e.g. 13',
+            hintStyle: const TextStyle(color: AppColors.textMuted),
+            filled: true,
+            fillColor: AppColors.surface,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+          ),
+          onChanged: (val) => notifier.setSelectedNumber(val),
+        ),
+        const SizedBox(height: 16),
+        if (cpList.isNotEmpty) ...[
+          Text(
+            'Generated CP Pannas (${cpList.length} total):',
+            style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: AppColors.darkGold),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: cpList.map((panna) {
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Text(
+                  panna,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildFamilyJodiPad(
+      PlayMarketState state, PlayMarketViewModel notifier) {
+    final familyList = PannaGenerator.getJodiFamilyMembers(state.selectedNumber ?? '');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Enter Base 2-Digit Jodi for Family Jodi:',
+          style: TextStyle(
+              fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          keyboardType: TextInputType.number,
+          maxLength: 2,
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 18),
+          decoration: InputDecoration(
+            counterText: '',
+            hintText: 'e.g. 00',
+            hintStyle: const TextStyle(color: AppColors.textMuted),
+            filled: true,
+            fillColor: AppColors.surface,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+          ),
+          onChanged: (val) => notifier.setSelectedNumber(val),
+        ),
+        const SizedBox(height: 16),
+        if (familyList.isNotEmpty) ...[
+          Text(
+            'Generated Family Jodis (${familyList.length} total):',
+            style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: AppColors.darkGold),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: familyList.map((jodi) {
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Text(
+                  jodi,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
     );
   }
 }

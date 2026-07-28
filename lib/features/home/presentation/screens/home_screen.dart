@@ -577,7 +577,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 child: ElevatedButton(
                   onPressed: () async {
                     await ExternalLinkService.launchUrlExternal(
-                        'https://github.com/durgeshksonar5/mobile_app/releases/download/1.0.0/king-wins.apk');
+                        'https://kingwins.pro');
                   },
                   child: const Text(
                     'UPDATE APP NOW',

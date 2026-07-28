@@ -77,6 +77,14 @@ class PlayMarketState {
     } else if (activeGame == 'full-sagam') {
       if (fullOpenPanna.length == 3 && fullClosePanna.length == 3) return 1;
       return 0;
+    } else if (activeGame == 'cp') {
+      final len = (selectedNumber ?? '').length;
+      if (len != 2) return 0;
+      return 10;
+    } else if (activeGame == 'family-jodi') {
+      final len = (selectedNumber ?? '').length;
+      if (len != 2) return 0;
+      return PannaGenerator.getJodiFamilyMembers(selectedNumber ?? '').length;
     }
     return 0;
   }

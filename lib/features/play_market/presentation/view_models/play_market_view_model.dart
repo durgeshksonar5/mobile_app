@@ -153,6 +153,9 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
       } else if (state.activeGame == 'family-panel') {
         state = state.copyWith(
             error: 'Please enter a valid 3-digit Panna for Family Panel.');
+      } else if (state.activeGame == 'cp' || state.activeGame == 'family-jodi') {
+        state = state.copyWith(
+            error: 'Please enter a valid 2-digit number.');
       } else if (state.activeGame == 'half-sagam' ||
           state.activeGame == 'full-sagam') {
         state = state.copyWith(
@@ -206,6 +209,25 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
         final sorted = PannaGenerator.sortPanna(state.familyPanna);
         final factor = PannaGenerator.getFamilyPannas(state.familyPanna).length;
         bids.add(_BidToPlace(sorted, amt * factor));
+      } else if (state.activeGame == 'cp') {
+        final num = state.selectedNumber ?? '';
+        if (num.length != 2 || int.tryParse(num) == null) {
+          state = state.copyWith(
+              isLoading: false,
+              error: 'Please enter a valid 2-digit number for CP.');
+          return false;
+        }
+        bids.add(_BidToPlace(num, amt * 10));
+      } else if (state.activeGame == 'family-jodi') {
+        final num = state.selectedNumber ?? '';
+        if (num.length != 2 || int.tryParse(num) == null) {
+          state = state.copyWith(
+              isLoading: false,
+              error: 'Please enter a valid 2-digit number for Family Jodi.');
+          return false;
+        }
+        final factor = PannaGenerator.getJodiFamilyMembers(num).length;
+        bids.add(_BidToPlace(num, amt * factor));
       } else if (state.activeGame == 'sp-motor' ||
           state.activeGame == 'dp-motor') {
         final len = (state.selectedNumber ?? '').length;
