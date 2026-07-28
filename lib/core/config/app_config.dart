@@ -19,6 +19,7 @@ class AppConfig {
   static late final String whatsappLink;
   static late final String contactSyncPurpose;
   static const int networkTimeoutMs = 30000;
+  static const String appVersion = '1.0.0';
 
   static void initialize() {
     environment = AppEnvironment.fromString(_envStr);

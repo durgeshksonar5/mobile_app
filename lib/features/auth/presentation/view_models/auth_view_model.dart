@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../states/auth_state.dart';
@@ -5,6 +6,7 @@ import '../../domain/models/user_model.dart';
 import '../../../../app/dependency_injection/providers.dart';
 import '../../../../core/validation/validators.dart';
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/config/app_config.dart';
 
 final authViewModelProvider =
     StateNotifierProvider<AuthViewModel, AuthState>((ref) {
@@ -27,7 +29,12 @@ class AuthViewModel extends StateNotifier<AuthState> {
         if (user.isBlocked) {
           state = state.copyWith(isLoading: false, isBlocked: true);
         } else {
-          state = state.copyWith(isLoading: false, user: user);
+          final isUpdateNeeded = await _checkVersionUpdateNeeded();
+          state = state.copyWith(
+            isLoading: false,
+            user: user,
+            isUpdateRequired: isUpdateNeeded,
+          );
         }
       } else {
         state = state.copyWith(isLoading: false);
@@ -35,6 +42,19 @@ class AuthViewModel extends StateNotifier<AuthState> {
     } catch (_) {
       state = state.copyWith(isLoading: false);
     }
+  }
+
+  Future<bool> _checkVersionUpdateNeeded() async {
+    try {
+      final latestVersion = await _authRepository.getLatestAppVersion();
+      if (latestVersion != null && latestVersion.isNotEmpty) {
+        const currentVersion = AppConfig.appVersion;
+        return latestVersion.trim() != currentVersion;
+      }
+    } catch (e) {
+      debugPrint('Error checking app version: $e');
+    }
+    return false;
   }
 
   Future<bool> login(String rawPhone, String rawPassword) async {
@@ -58,7 +78,12 @@ class AuthViewModel extends StateNotifier<AuthState> {
         phoneNumber: formattedPhone,
         password: rawPassword.trim(),
       );
-      state = state.copyWith(isLoading: false, user: user);
+      final isUpdateNeeded = await _checkVersionUpdateNeeded();
+      state = state.copyWith(
+        isLoading: false,
+        user: user,
+        isUpdateRequired: isUpdateNeeded,
+      );
       return true;
     } on AccountBlockedException {
       state = state.copyWith(isLoading: false, isBlocked: true);
@@ -89,7 +114,12 @@ class AuthViewModel extends StateNotifier<AuthState> {
         final userJson = res['user'] as Map<String, dynamic>?;
         if (userJson != null) {
           final user = UserModel.fromJson(userJson);
-          state = state.copyWith(isLoading: false, user: user);
+          final isUpdateNeeded = await _checkVersionUpdateNeeded();
+          state = state.copyWith(
+            isLoading: false,
+            user: user,
+            isUpdateRequired: isUpdateNeeded,
+          );
         } else {
           state = state.copyWith(isLoading: false);
         }
@@ -122,7 +152,12 @@ class AuthViewModel extends StateNotifier<AuthState> {
         password: password,
         isRegister: isRegister,
       );
-      state = state.copyWith(isLoading: false, user: user);
+      final isUpdateNeeded = await _checkVersionUpdateNeeded();
+      state = state.copyWith(
+        isLoading: false,
+        user: user,
+        isUpdateRequired: isUpdateNeeded,
+      );
       return true;
     } on AppException catch (e) {
       state = state.copyWith(isLoading: false, error: e.message);

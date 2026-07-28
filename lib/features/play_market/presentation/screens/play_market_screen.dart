@@ -26,12 +26,12 @@ class PlayMarketScreen extends ConsumerWidget {
         : '${state.activeGame.replaceAll('-', ' ').toUpperCase()} BETTING';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF111827), // Clean dark canvas
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1F2937),
-        elevation: 0,
+        backgroundColor: AppColors.surface,
+        elevation: 1,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.primaryGold),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () {
             if (state.activeGame != 'list') {
               notifier.selectGame('list');
@@ -49,7 +49,7 @@ class PlayMarketScreen extends ConsumerWidget {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.textPrimary,
               ),
             ),
             Text(
@@ -57,7 +57,7 @@ class PlayMarketScreen extends ConsumerWidget {
               style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
-                color: AppColors.primaryGold,
+                color: AppColors.darkGold,
                 letterSpacing: 0.5,
               ),
             ),
@@ -66,7 +66,7 @@ class PlayMarketScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.history_rounded,
-                color: AppColors.primaryGold, size: 24),
+                color: AppColors.darkGold, size: 24),
             tooltip: 'Bet History',
             onPressed: () => _showHistoryDialog(context, decodedName),
           ),
@@ -316,7 +316,7 @@ class PlayMarketScreen extends ConsumerWidget {
         // 1. Wallet Balance & Session Bar
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          color: const Color(0xFF1F2937),
+          color: AppColors.surfaceGold,
           child: Column(
             children: [
               // Wallet Row
@@ -326,13 +326,13 @@ class PlayMarketScreen extends ConsumerWidget {
                   Row(
                     children: [
                       const Icon(Icons.account_balance_wallet,
-                          color: AppColors.primaryGold, size: 20),
+                          color: AppColors.darkGold, size: 20),
                       const SizedBox(width: 8),
                       const Text(
                         'Wallet Balance:',
                         style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF9CA3AF),
+                            color: AppColors.textSecondary,
                             fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(width: 6),
@@ -341,7 +341,7 @@ class PlayMarketScreen extends ConsumerWidget {
                         style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primaryGold),
+                            color: AppColors.textPrimary),
                       ),
                     ],
                   ),
@@ -356,16 +356,16 @@ class PlayMarketScreen extends ConsumerWidget {
                   padding:
                       const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF111827),
+                    color: AppColors.background,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF374151)),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: const Text(
                     '🔒 Session Locked: Jodi applies to both Open & Close results',
                     style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primaryGold),
+                        color: AppColors.darkGold),
                     textAlign: TextAlign.center,
                   ),
                 )
@@ -376,7 +376,7 @@ class PlayMarketScreen extends ConsumerWidget {
                       'Choose Session:',
                       style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(width: 12),
@@ -438,13 +438,13 @@ class PlayMarketScreen extends ConsumerWidget {
           color: isSelected
               ? AppColors.primaryGold
               : (isDisabled
-                  ? const Color(0xFF374151)
-                  : const Color(0xFF111827)),
+                  ? AppColors.disabledBackground
+                  : AppColors.surface),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
                 ? AppColors.primaryGold
-                : (isDisabled ? Colors.transparent : const Color(0xFF4B5563)),
+                : (isDisabled ? Colors.transparent : AppColors.border),
           ),
         ),
         alignment: Alignment.center,
@@ -455,7 +455,7 @@ class PlayMarketScreen extends ConsumerWidget {
             fontWeight: FontWeight.bold,
             color: isSelected
                 ? AppColors.textPrimary
-                : (isDisabled ? const Color(0xFF9CA3AF) : Colors.white),
+                : (isDisabled ? AppColors.disabledForeground : AppColors.textSecondary),
           ),
         ),
       ),
@@ -502,7 +502,7 @@ class PlayMarketScreen extends ConsumerWidget {
         const Text(
           'Select Single Digits (0 to 9):',
           style: TextStyle(
-              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+              fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 14),
         GridView.builder(
@@ -524,11 +524,11 @@ class PlayMarketScreen extends ConsumerWidget {
                   shape: BoxShape.circle,
                   color: isSelected
                       ? AppColors.primaryGold
-                      : const Color(0xFF1F2937),
+                      : AppColors.surface,
                   border: Border.all(
                     color: isSelected
                         ? AppColors.primaryGold
-                        : const Color(0xFF374151),
+                        : AppColors.border,
                     width: 2,
                   ),
                 ),
@@ -538,7 +538,7 @@ class PlayMarketScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
-                    color: isSelected ? AppColors.textPrimary : Colors.white,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -557,7 +557,7 @@ class PlayMarketScreen extends ConsumerWidget {
         const Text(
           'Select Jodi Numbers (00 to 99):',
           style: TextStyle(
-              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+              fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 14),
         GridView.builder(
@@ -579,12 +579,12 @@ class PlayMarketScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.primaryGold
-                      : const Color(0xFF1F2937),
+                      : AppColors.surface,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.primaryGold
-                        : const Color(0xFF374151),
+                        : AppColors.border,
                   ),
                 ),
                 alignment: Alignment.center,
@@ -593,7 +593,7 @@ class PlayMarketScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? AppColors.textPrimary : Colors.white,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -646,22 +646,22 @@ class PlayMarketScreen extends ConsumerWidget {
 
         // Search Bar
         TextField(
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
           decoration: InputDecoration(
             hintText: 'Type 3-digit Panna (e.g. 123)...',
-            hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+            hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
             prefixIcon: const Icon(Icons.search,
-                color: AppColors.primaryGold, size: 20),
+                color: AppColors.darkGold, size: 20),
             filled: true,
-            fillColor: const Color(0xFF1F2937),
+            fillColor: AppColors.surface,
             contentPadding: const EdgeInsets.symmetric(vertical: 10),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFF374151)),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFF374151)),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
           ),
           onChanged: (q) => notifier.setSearchQuery(q),
@@ -672,7 +672,7 @@ class PlayMarketScreen extends ConsumerWidget {
         const Text(
           'Filter by Ank Sum:',
           style: TextStyle(
-              fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+              fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 8),
         SingleChildScrollView(
@@ -710,12 +710,12 @@ class PlayMarketScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.primaryGold
-                      : const Color(0xFF1F2937),
+                      : AppColors.surface,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.primaryGold
-                        : const Color(0xFF374151),
+                        : AppColors.border,
                   ),
                 ),
                 alignment: Alignment.center,
@@ -724,7 +724,7 @@ class PlayMarketScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? AppColors.textPrimary : Colors.white,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -744,11 +744,11 @@ class PlayMarketScreen extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primaryGold : const Color(0xFF1F2937),
+            color: isSelected ? AppColors.primaryGold : AppColors.surface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color:
-                  isSelected ? AppColors.primaryGold : const Color(0xFF374151),
+                  isSelected ? AppColors.primaryGold : AppColors.border,
             ),
           ),
           child: Text(
@@ -756,7 +756,7 @@ class PlayMarketScreen extends ConsumerWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: isSelected ? AppColors.textPrimary : Colors.white,
+              color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
             ),
           ),
         ),
@@ -779,7 +779,7 @@ class PlayMarketScreen extends ConsumerWidget {
         Text(
           isSp ? 'SP Motor Digit Selection:' : 'DP Motor Digit Selection:',
           style: const TextStyle(
-              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+              fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 6),
         Text(
@@ -787,14 +787,14 @@ class PlayMarketScreen extends ConsumerWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,
-            color: count >= 4 ? AppColors.primaryGold : const Color(0xFFEF4444),
+            color: count >= 4 ? AppColors.statusGreen : AppColors.statusRed,
           ),
         ),
         if (count >= 4) ...[
           const SizedBox(height: 4),
           Text(
             'Generated ${isSp ? 'Single' : 'Double'} Pannas: $factor combinations',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF10B981)),
+            style: const TextStyle(fontSize: 12, color: AppColors.statusGreen),
           ),
         ],
         const SizedBox(height: 14),
@@ -817,11 +817,11 @@ class PlayMarketScreen extends ConsumerWidget {
                   shape: BoxShape.circle,
                   color: isSelected
                       ? AppColors.primaryGold
-                      : const Color(0xFF1F2937),
+                      : AppColors.surface,
                   border: Border.all(
                     color: isSelected
                         ? AppColors.primaryGold
-                        : const Color(0xFF374151),
+                        : AppColors.border,
                     width: 2,
                   ),
                 ),
@@ -831,7 +831,7 @@ class PlayMarketScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
-                    color: isSelected ? AppColors.textPrimary : Colors.white,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -850,7 +850,7 @@ class PlayMarketScreen extends ConsumerWidget {
         const Text(
           '1. Choose Base Ank (0 to 9):',
           style: TextStyle(
-              fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+              fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 10),
         GridView.builder(
@@ -871,12 +871,12 @@ class PlayMarketScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.primaryGold
-                      : const Color(0xFF1F2937),
+                      : AppColors.surface,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.primaryGold
-                        : const Color(0xFF374151),
+                        : AppColors.border,
                   ),
                 ),
                 alignment: Alignment.center,
@@ -885,7 +885,7 @@ class PlayMarketScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? AppColors.textPrimary : Colors.white,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -896,7 +896,7 @@ class PlayMarketScreen extends ConsumerWidget {
         const Text(
           '2. Select Panna Categories:',
           style: TextStyle(
-              fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+              fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 10),
         Row(
@@ -940,10 +940,10 @@ class PlayMarketScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryGold : const Color(0xFF1F2937),
+          color: isSelected ? AppColors.primaryGold : AppColors.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGold : const Color(0xFF374151),
+            color: isSelected ? AppColors.primaryGold : AppColors.border,
           ),
         ),
         alignment: Alignment.center,
@@ -953,7 +953,7 @@ class PlayMarketScreen extends ConsumerWidget {
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,
-            color: isSelected ? AppColors.textPrimary : Colors.white,
+            color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
           ),
         ),
       ),
@@ -971,22 +971,22 @@ class PlayMarketScreen extends ConsumerWidget {
         const Text(
           'Enter Base 3-Digit Panna:',
           style: TextStyle(
-              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+              fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 10),
         TextField(
           keyboardType: TextInputType.number,
           maxLength: 3,
-          style: const TextStyle(color: Colors.white, fontSize: 18),
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 18),
           decoration: InputDecoration(
             counterText: '',
             hintText: 'e.g. 145',
-            hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+            hintStyle: const TextStyle(color: AppColors.textMuted),
             filled: true,
-            fillColor: const Color(0xFF1F2937),
+            fillColor: AppColors.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFF374151)),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
           ),
           onChanged: (val) => notifier.setFamilyPanna(val),
@@ -997,8 +997,8 @@ class PlayMarketScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(top: 8.0),
             child: Text(
               'Invalid Panna! Digits must be in ascending order (where 0 is 10, e.g. 778 instead of 787).',
-              style: TextStyle(
-                  color: Colors.red[400],
+              style: const TextStyle(
+                  color: AppColors.statusRed,
                   fontSize: 12,
                   fontWeight: FontWeight.bold),
             ),
@@ -1010,7 +1010,7 @@ class PlayMarketScreen extends ConsumerWidget {
             style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: AppColors.primaryGold),
+                color: AppColors.darkGold),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -1021,16 +1021,16 @@ class PlayMarketScreen extends ConsumerWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1F2937),
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.primaryGold),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Text(
                   panna,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               );
@@ -1052,7 +1052,7 @@ class PlayMarketScreen extends ConsumerWidget {
         const Text(
           'Select Half Sangam Combination Type:',
           style: TextStyle(
-              fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+              fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 10),
         Row(
@@ -1088,21 +1088,21 @@ class PlayMarketScreen extends ConsumerWidget {
                     style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white),
+                        color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 6),
                   TextField(
                     keyboardType: TextInputType.number,
                     maxLength: isType1 ? 3 : 1,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
                     decoration: InputDecoration(
                       counterText: '',
                       hintText: isType1 ? '123' : '5',
                       filled: true,
-                      fillColor: const Color(0xFF1F2937),
+                      fillColor: AppColors.surface,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFF374151)),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                     ),
                     onChanged: (val) {
@@ -1128,21 +1128,21 @@ class PlayMarketScreen extends ConsumerWidget {
                     style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white),
+                        color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 6),
                   TextField(
                     keyboardType: TextInputType.number,
                     maxLength: isType1 ? 1 : 3,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
                     decoration: InputDecoration(
                       counterText: '',
                       hintText: isType1 ? '5' : '123',
                       filled: true,
-                      fillColor: const Color(0xFF1F2937),
+                      fillColor: AppColors.surface,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFF374151)),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                     ),
                     onChanged: (val) {
@@ -1173,7 +1173,7 @@ class PlayMarketScreen extends ConsumerWidget {
         const Text(
           'Full Sangam Combination Inputs:',
           style: TextStyle(
-              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+              fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 14),
         Row(
@@ -1187,21 +1187,21 @@ class PlayMarketScreen extends ConsumerWidget {
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white),
+                        color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 6),
                   TextField(
                     keyboardType: TextInputType.number,
                     maxLength: 3,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
                     decoration: InputDecoration(
                       counterText: '',
                       hintText: 'e.g. 123',
                       filled: true,
-                      fillColor: const Color(0xFF1F2937),
+                      fillColor: AppColors.surface,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFF374151)),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                     ),
                     onChanged: (val) =>
@@ -1220,21 +1220,21 @@ class PlayMarketScreen extends ConsumerWidget {
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white),
+                        color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 6),
                   TextField(
                     keyboardType: TextInputType.number,
                     maxLength: 3,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
                     decoration: InputDecoration(
                       counterText: '',
                       hintText: 'e.g. 456',
                       filled: true,
-                      fillColor: const Color(0xFF1F2937),
+                      fillColor: AppColors.surface,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFF374151)),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                     ),
                     onChanged: (val) =>
@@ -1264,8 +1264,8 @@ class PlayMarketScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
-        color: Color(0xFF1F2937),
-        border: Border(top: BorderSide(color: Color(0xFF374151))),
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1274,25 +1274,25 @@ class PlayMarketScreen extends ConsumerWidget {
           TextField(
             keyboardType: TextInputType.number,
             style: const TextStyle(
-                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
             decoration: InputDecoration(
               prefixText: '₹ ',
               prefixStyle: const TextStyle(
-                  color: AppColors.primaryGold,
+                  color: AppColors.darkGold,
                   fontSize: 18,
                   fontWeight: FontWeight.bold),
               hintText: 'Enter Points (e.g. 100)',
               hintStyle:
-                  const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+                  const TextStyle(color: AppColors.textMuted, fontSize: 14),
               filled: true,
-              fillColor: const Color(0xFF111827),
+              fillColor: AppColors.background,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFF374151)),
+                borderSide: const BorderSide(color: AppColors.border),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFF374151)),
+                borderSide: const BorderSide(color: AppColors.border),
               ),
             ),
             onChanged: (val) => notifier.setAmount(val),
@@ -1303,9 +1303,9 @@ class PlayMarketScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFF111827),
+              color: AppColors.surfaceGold,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF374151)),
+              border: Border.all(color: AppColors.border),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1314,7 +1314,7 @@ class PlayMarketScreen extends ConsumerWidget {
                   'Total Bid Cost:',
                   style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF9CA3AF),
+                      color: AppColors.textSecondary,
                       fontWeight: FontWeight.w600),
                 ),
                 Text(
@@ -1322,7 +1322,7 @@ class PlayMarketScreen extends ConsumerWidget {
                   style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primaryGold),
+                      color: AppColors.darkGold),
                 ),
               ],
             ),
@@ -1403,10 +1403,10 @@ class PlayMarketScreen extends ConsumerWidget {
       context: context,
       builder: (dialogContext) {
         return Dialog(
-          backgroundColor: const Color(0xFF111827),
+          backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFF374151)),
+            side: const BorderSide(color: AppColors.border),
           ),
           child: Container(
             padding: const EdgeInsets.all(16),
@@ -1421,36 +1421,36 @@ class PlayMarketScreen extends ConsumerWidget {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primaryGold,
+                        color: AppColors.darkGold,
                       ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close,
-                          color: Colors.white, size: 20),
+                          color: AppColors.textPrimary, size: 20),
                       onPressed: () => Navigator.pop(dialogContext),
                     ),
                   ],
                 ),
-                const Divider(color: Color(0xFF374151)),
+                const Divider(color: AppColors.divider),
                 const SizedBox(height: 20),
                 const Icon(Icons.history_rounded,
-                    size: 48, color: Color(0xFF4B5563)),
+                    size: 48, color: AppColors.textMuted),
                 const SizedBox(height: 12),
                 const Text(
                   'No recent bets placed for this session.',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1F2937),
-                      side: const BorderSide(color: Color(0xFF374151)),
+                      backgroundColor: AppColors.surface,
+                      side: const BorderSide(color: AppColors.border),
                     ),
                     onPressed: () => Navigator.pop(dialogContext),
                     child: const Text('Close',
-                        style: TextStyle(color: Colors.white)),
+                        style: TextStyle(color: AppColors.textPrimary)),
                   ),
                 ),
               ],
@@ -1467,7 +1467,7 @@ class PlayMarketScreen extends ConsumerWidget {
         margin: const EdgeInsets.all(24),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         decoration: BoxDecoration(
-          color: const Color(0xFF1F2937),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
               color: AppColors.statusRed.withValues(alpha: 0.3), width: 1.5),
@@ -1478,7 +1478,7 @@ class PlayMarketScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
-                color: Color(0xFF2D1A1F),
+                color: AppColors.statusRedBg,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -1494,7 +1494,7 @@ class PlayMarketScreen extends ConsumerWidget {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 letterSpacing: 0.5,
               ),
             ),
@@ -1504,7 +1504,7 @@ class PlayMarketScreen extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
-                color: Color(0xFF9CA3AF),
+                color: AppColors.textSecondary,
                 height: 1.5,
               ),
             ),

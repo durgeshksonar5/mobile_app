@@ -78,6 +78,16 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> getNotificationSettings() async {
+    try {
+      final response = await _apiClient.dio.get('/notifications/settings/');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw ServerException(
+          'Failed to load notification settings', e.response?.statusCode);
+    }
+  }
+
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
     try {
       final response = await _apiClient.dio.patch('/auth/me/', data: data);

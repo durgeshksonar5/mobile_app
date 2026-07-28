@@ -526,8 +526,98 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
+  Widget _buildUpdateBlockingScreen() {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.p24, vertical: AppSpacing.p32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.p24),
+                decoration: const BoxDecoration(
+                  color: AppColors.statusAmberBg,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.system_update_rounded,
+                  color: AppColors.statusAmber,
+                  size: 80,
+                ),
+              ),
+              const SizedBox(height: 32),
+              const Text(
+                'New Update Available',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'A new version of King Wins is available. You must update the app to the latest version to perform tasks, view results, or place bets.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+              ),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await ExternalLinkService.launchUrlExternal(
+                        'https://github.com/durgeshksonar5/mobile_app/releases/download/1.0.0/king-wins.apk');
+                  },
+                  child: const Text(
+                    'UPDATE APP NOW',
+                    style: TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: () {
+                  ref.read(authViewModelProvider.notifier).logout();
+                },
+                icon: const Icon(Icons.logout,
+                    color: AppColors.statusRed, size: 18),
+                label: const Text(
+                  'Logout',
+                  style: TextStyle(
+                    color: AppColors.statusRed,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authViewModelProvider);
+
+    if (authState.isUpdateRequired) {
+      return _buildUpdateBlockingScreen();
+    }
+
     if (_permissionStatus == null) {
       return const Scaffold(
         body: Center(
@@ -543,7 +633,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
 
     final homeState = ref.watch(homeViewModelProvider);
-    final authState = ref.watch(authViewModelProvider);
     final user = authState.user;
     final homeNotifier = ref.read(homeViewModelProvider.notifier);
 

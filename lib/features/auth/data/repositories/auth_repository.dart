@@ -105,6 +105,16 @@ class AuthRepository {
     return null;
   }
 
+  Future<String?> getLatestAppVersion() async {
+    try {
+      final res = await _authService.getNotificationSettings();
+      if (res['success'] == true && res['data'] != null) {
+        return res['data']['app_version'] as String?;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   Future<UserModel> updateProfile(Map<String, dynamic> data) async {
     final res = await _authService.updateProfile(data);
     if (res['success'] == true && res['data'] != null) {
