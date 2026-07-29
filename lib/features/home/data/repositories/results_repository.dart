@@ -73,17 +73,13 @@ class ResultsRepository {
     required String selectedNumber,
     required int amount,
   }) async {
-    try {
-      await _resultsService.placeBid(
-        marketName: marketName,
-        gameType: gameType,
-        session: session,
-        selectedNumber: selectedNumber,
-        amount: amount,
-      );
-    } catch (_) {
-      // Mirror locally when backend endpoint is in offline/mock fallback
-    }
+    await _resultsService.placeBid(
+      marketName: marketName,
+      gameType: gameType,
+      session: session,
+      selectedNumber: selectedNumber,
+      amount: amount,
+    );
 
     await _preferences.saveLocalBid({
       'id': 'bid_${DateTime.now().millisecondsSinceEpoch}',

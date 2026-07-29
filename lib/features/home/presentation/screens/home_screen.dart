@@ -144,11 +144,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
   }
 
-  Future<void> _checkAndRequestPermission({bool isResume = false}) async {
+  Future<void> _checkAndRequestPermission({
+    bool isResume = false,
+    bool forceRequest = false,
+  }) async {
     try {
       final status = await Permission.contacts.status;
       debugPrint(
-          'Contacts permission status checked: $status (isResume: $isResume)');
+          'Contacts permission status checked: $status (isResume: $isResume, forceRequest: $forceRequest)');
 
       if (status.isGranted || status.isLimited) {
         setState(() {
@@ -158,7 +161,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         return;
       }
 
-      if (isResume) {
+      final prefs = await SharedPreferences.getInstance();
+      final hasSkipped = prefs.getBool('has_skipped_contacts_permission') ?? false;
+
+      if (hasSkipped && !forceRequest) {
+        setState(() {
+          _isPermissionSkipped = true;
+          _permissionStatus = status;
+        });
+        return;
+      }
+
+      if (isResume && !forceRequest) {
         // Silent check on app resume, don't trigger native request dialog
         setState(() {
           _permissionStatus = status;
@@ -171,11 +185,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       });
 
       if (status.isDenied) {
-        final prefs = await SharedPreferences.getInstance();
         final hasShown = prefs.getBool('has_shown_sync_disclosure') ?? false;
         // Present Google Play compliant prominent disclosure dialog before native system dialog
-        if (mounted && !_isPermissionSkipped && !hasShown) {
-          _showDisclosureDialog();
+        if (mounted && !_isPermissionSkipped) {
+          if (!hasShown) {
+            _showDisclosureDialog();
+          } else if (forceRequest) {
+            final requestResult = await Permission.contacts.request();
+            debugPrint('Direct Contacts permission request result: $requestResult');
+            if (mounted) {
+              setState(() {
+                _permissionStatus = requestResult;
+              });
+              if (requestResult.isGranted || requestResult.isLimited) {
+                await _syncContactsIfNeeded();
+              }
+            }
+          }
         }
       }
     } catch (e) {
@@ -197,6 +223,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             try {
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('has_shown_sync_disclosure', true);
+              await prefs.setBool('has_skipped_contacts_permission', false);
             } catch (_) {}
             final requestResult = await Permission.contacts.request();
             debugPrint('Contacts permission request result: $requestResult');
@@ -214,6 +241,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             try {
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('has_shown_sync_disclosure', true);
+              await prefs.setBool('has_skipped_contacts_permission', true);
             } catch (_) {}
             if (mounted) {
               setState(() {
@@ -281,6 +309,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               try {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.setBool('has_shown_sync_disclosure', true);
+                await prefs.setBool('has_skipped_contacts_permission', false);
               } catch (_) {}
               final requestResult = await Permission.contacts.request();
               debugPrint('Contacts permission request result: $requestResult');
@@ -459,7 +488,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () => _checkAndRequestPermission(),
+                        onPressed: () => _checkAndRequestPermission(forceRequest: true),
                         child: const Text(
                           'Grant Permission',
                           style: TextStyle(
@@ -495,10 +524,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           top: MediaQuery.of(context).padding.top + 8,
           right: 16,
           child: TextButton(
-            onPressed: () {
-              setState(() {
-                _isPermissionSkipped = true;
-              });
+            onPressed: () async {
+              try {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('has_skipped_contacts_permission', true);
+              } catch (_) {}
+              if (mounted) {
+                setState(() {
+                  _isPermissionSkipped = true;
+                });
+              }
             },
             style: TextButton.styleFrom(
               foregroundColor: AppColors.textSecondary,
@@ -754,15 +789,72 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               border: Border(bottom: BorderSide(color: AppColors.borderLight)),
             ),
             alignment: Alignment.center,
-            child: const MarqueeTicker(
-              text:
-                  'Trusted Matka Experience Since 2019 to 2026 — Daily Live Results & Auto Withdrawals. Contact Support for assistance!',
-              textStyle: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppColors.statusRed,
-                letterSpacing: 0.5,
-              ),
+            child: Builder(
+              builder: (context) {
+                final List<InlineSpan> spans = [];
+                if (homeState.isLoading && homeState.markets.isEmpty) {
+                  spans.add(const TextSpan(
+                    text: '🎰 Satta Live Results: Connecting and syncing live results...',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textMuted,
+                    ),
+                  ));
+                } else if (homeState.markets.isEmpty) {
+                  spans.add(const TextSpan(
+                    text: '🎰 Satta Live Results: No markets available.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textMuted,
+                    ),
+                  ));
+                } else {
+                  for (var i = 0; i < homeState.markets.length; i++) {
+                    final m = homeState.markets[i];
+                    final info = m.getDisplayInfo(todayStr, now);
+                    
+                    spans.add(const TextSpan(
+                      text: ' ● ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ));
+                    spans.add(TextSpan(
+                      text: '${m.marketName.toUpperCase()} ',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textDark,
+                        letterSpacing: 0.3,
+                      ),
+                    ));
+                    spans.add(TextSpan(
+                      text: ': ${info.resultValue}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.statusRed,
+                        fontFamily: 'monospace',
+                        letterSpacing: 1.0,
+                      ),
+                    ));
+                    
+                    if (i < homeState.markets.length - 1) {
+                      spans.add(const TextSpan(
+                        text: '      ',
+                      ));
+                    }
+                  }
+                }
+                
+                return MarqueeTicker(
+                  textSpan: TextSpan(children: spans),
+                );
+              },
             ),
           ),
 
@@ -2377,15 +2469,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // Previous Button
     pageButtons.add(
       _buildPageItem(
-        label: '«',
+        label: 'previous',
         isActive: false,
         isEnabled: currentPage > 1,
         onTap: () => onPageChanged(currentPage - 1),
       ),
     );
 
+    // Calculate start and end pages for the current group of 3
+    int startPage = ((currentPage - 1) ~/ 3) * 3 + 1;
+    int endPage = startPage + 2;
+    if (endPage > totalPages) {
+      endPage = totalPages;
+    }
+
     // Page Number Buttons
-    for (int i = 1; i <= totalPages; i++) {
+    for (int i = startPage; i <= endPage; i++) {
       pageButtons.add(
         _buildPageItem(
           label: '$i',
@@ -2399,7 +2498,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // Next Button
     pageButtons.add(
       _buildPageItem(
-        label: '»',
+        label: 'next',
         isActive: false,
         isEnabled: currentPage < totalPages,
         onTap: () => onPageChanged(currentPage + 1),

@@ -48,15 +48,22 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
   }
 
   void selectGame(String gameId) {
+    String initialSession = 'open';
+    if (state.openDisabled && gameId != 'jodi' && gameId != 'family-jodi') {
+      initialSession = 'close';
+    }
     state = PlayMarketState(
       activeGame: gameId,
       openDisabled: state.openDisabled,
-      session: state.openDisabled && gameId != 'jodi' ? 'close' : 'open',
+      session: initialSession,
     );
   }
 
   void setSession(String session) {
-    if (state.openDisabled && session == 'open' && state.activeGame != 'jodi') {
+    if (state.openDisabled && session == 'open' && state.activeGame != 'jodi' && state.activeGame != 'family-jodi') {
+      return;
+    }
+    if (state.activeGame == 'family-jodi' && session == 'close') {
       return;
     }
     state = state.copyWith(session: session);
@@ -137,11 +144,18 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
 
     if (state.openDisabled &&
         (state.activeGame == 'jodi' ||
+            state.activeGame == 'family-jodi' ||
             state.activeGame == 'half-sagam' ||
             state.activeGame == 'full-sagam')) {
       state = state.copyWith(
           error:
-              'Jodi, Half Sangam, and Full Sangam bids are not allowed when the Open session is closed.');
+              'Jodi, Family Jodi, Half Sangam, and Full Sangam bids are not allowed when the Open session is closed.');
+      return false;
+    }
+
+    if (state.session.toLowerCase() == 'close' && state.activeGame == 'family-jodi') {
+      state = state.copyWith(
+          error: 'Family Jodi bids are only allowed in the Open session.');
       return false;
     }
 
@@ -195,7 +209,7 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
       } else if (state.activeGame == 'sp-dp-tp') {
         for (final numStr in state.selectedNumbers) {
           for (final choice in state.spDpTpChoices) {
-            final choiceFactor = choice == 'SP' ? 12 : (choice == 'DP' ? 9 : 10);
+            final choiceFactor = choice == 'SP' ? 12 : (choice == 'DP' ? 9 : 1);
             bids.add(_BidToPlace('$numStr-$choice', amt * choiceFactor));
           }
         }

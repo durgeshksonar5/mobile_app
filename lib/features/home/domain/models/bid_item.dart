@@ -1,3 +1,5 @@
+import '../../../../core/utils/panna_generator.dart';
+
 /// Bid / Bet record item model.
 class BidItem {
   final dynamic id;
@@ -8,7 +10,7 @@ class BidItem {
   final int amount;
   final String status; // 'Active', 'WON', 'LOST'
   final int winAmount;
-  final DateTime createdAt;
+  final dynamic createdAt;
 
   int get baseAmount {
     final gType = gameType.toUpperCase();
@@ -33,6 +35,12 @@ class BidItem {
         final factor = choice == 'SP' ? 12 : (choice == 'DP' ? 9 : 10);
         return (amount / factor).round();
       }
+    } else if (gType == 'CP') {
+      return (amount / 10).round();
+    } else if (gType == 'FAMILY JODI') {
+      final members = PannaGenerator.getJodiFamilyMembers(selectedNumber);
+      final factor = members.isNotEmpty ? members.length : 1;
+      return (amount / factor).round();
     }
     return amount;
   }

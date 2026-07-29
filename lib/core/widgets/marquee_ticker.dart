@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 
 /// Marquee scrolling ticker for King Win announcement banner.
 class MarqueeTicker extends StatefulWidget {
-  final String text;
-  final TextStyle textStyle;
+  final InlineSpan textSpan;
 
   const MarqueeTicker({
     super.key,
-    required this.text,
-    required this.textStyle,
+    required this.textSpan,
   });
 
   @override
@@ -18,6 +16,7 @@ class MarqueeTicker extends StatefulWidget {
 class _MarqueeTickerState extends State<MarqueeTicker>
     with SingleTickerProviderStateMixin {
   AnimationController? _controller;
+  double _textWidth = 600.0;
 
   @override
   void initState() {
@@ -25,9 +24,36 @@ class _MarqueeTickerState extends State<MarqueeTicker>
     final bindingName = WidgetsBinding.instance.runtimeType.toString();
     if (!bindingName.contains('Test')) {
       _controller = AnimationController(
-        duration: const Duration(seconds: 22),
         vsync: this,
-      )..repeat();
+      );
+      _calculateWidth();
+      _controller!.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant MarqueeTicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.textSpan != oldWidget.textSpan) {
+      _calculateWidth();
+    }
+  }
+
+  void _calculateWidth() {
+    final textPainter = TextPainter(
+      text: widget.textSpan,
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout(minWidth: 0, maxWidth: double.infinity);
+    _textWidth = textPainter.size.width;
+
+    if (_controller != null) {
+      // Keep scroll speed consistent at ~55 pixels/second
+      final double scrollSpeed = 55.0;
+      final double totalScrollDistance = 400.0 + _textWidth; // Using a default screen width estimate of 400
+      final int durationSeconds = (totalScrollDistance / scrollSpeed).clamp(10.0, 300.0).toInt();
+      
+      _controller!.duration = Duration(seconds: durationSeconds);
     }
   }
 
@@ -42,8 +68,11 @@ class _MarqueeTickerState extends State<MarqueeTicker>
     if (_controller == null) {
       return Container(
         alignment: Alignment.center,
-        child: Text(widget.text,
-            style: widget.textStyle, overflow: TextOverflow.ellipsis),
+        child: Text.rich(
+          widget.textSpan,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
       );
     }
 
@@ -52,17 +81,20 @@ class _MarqueeTickerState extends State<MarqueeTicker>
       builder: (context, child) {
         return LayoutBuilder(
           builder: (context, constraints) {
-            final offset = constraints.maxWidth -
-                (_controller!.value * (constraints.maxWidth + 600));
+            // Adjust the actual scroll distance dynamically based on parent constraints width
+            final totalDistance = constraints.maxWidth + _textWidth;
+            final offset = constraints.maxWidth - (_controller!.value * totalDistance);
+            
             return Transform.translate(
               offset: Offset(offset, 0),
               child: OverflowBox(
                 minWidth: 0,
                 maxWidth: double.infinity,
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  widget.text,
-                  style: widget.textStyle,
+                child: Text.rich(
+                  widget.textSpan,
+                  maxLines: 1,
+                  softWrap: false,
                 ),
               ),
             );

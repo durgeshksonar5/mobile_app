@@ -268,7 +268,7 @@ class PlayMarketScreen extends ConsumerWidget {
             final Color iconColor = mode['iconColor'] as Color;
 
             final bool isOpenOnlyGame =
-                id == 'jodi' || id == 'half-sagam' || id == 'full-sagam';
+                id == 'jodi' || id == 'family-jodi' || id == 'half-sagam' || id == 'full-sagam';
             final bool isGameDisabled = openDisabled && isOpenOnlyGame;
 
             return Opacity(
@@ -365,8 +365,8 @@ class PlayMarketScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 10),
 
-              // Session Selector Row (Hidden / Locked for Jodi)
-              if (state.activeGame == 'jodi')
+              // Session Selector Row (Hidden / Locked for Jodi and Family Jodi)
+              if (state.activeGame == 'jodi' || state.activeGame == 'family-jodi')
                 Container(
                   width: double.infinity,
                   padding:
@@ -376,9 +376,9 @@ class PlayMarketScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.border),
                   ),
-                  child: const Text(
-                    '🔒 Session Locked: Jodi applies to both Open & Close results',
-                    style: TextStyle(
+                  child: Text(
+                    '🔒 Session Locked: ${state.activeGame == 'jodi' ? 'Jodi' : 'Family Jodi'} applies to Open session / results',
+                    style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         color: AppColors.darkGold),
@@ -413,7 +413,7 @@ class PlayMarketScreen extends ConsumerWidget {
                             child: _buildSessionButton(
                               label: 'CLOSE',
                               isSelected: state.session == 'close',
-                              isDisabled: false,
+                              isDisabled: state.activeGame == 'family-jodi',
                               onTap: () => notifier.setSession('close'),
                             ),
                           ),

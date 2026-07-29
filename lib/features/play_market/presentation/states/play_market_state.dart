@@ -65,7 +65,7 @@ class PlayMarketState {
       for (final choice in spDpTpChoices) {
         if (choice == 'SP') factor += 12;
         if (choice == 'DP') factor += 9;
-        if (choice == 'TP') factor += 10;
+        if (choice == 'TP') factor += 1;
       }
       return selectedNumbers.length * factor;
     } else if (activeGame == 'family-panel') {
