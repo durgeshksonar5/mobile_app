@@ -84,6 +84,31 @@ class MarketResult {
 
   /// Calculates display info (result text, status text, color, play availability)
   MarketDisplayInfo getDisplayInfo(String todayStr, DateTime referenceDate) {
+    int timeToMinutes(String timeStr) {
+      if (timeStr.isEmpty) return 0;
+      final clean = timeStr.trim().toUpperCase();
+      final match = RegExp(r'^(\d+):(\d+)\s*(AM|PM)$').firstMatch(clean);
+      if (match == null) return 0;
+      int hours = int.parse(match.group(1)!);
+      final minutes = int.parse(match.group(2)!);
+      final modifier = match.group(3)!;
+      if (modifier == 'PM' && hours < 12) hours += 12;
+      if (modifier == 'AM' && hours == 12) hours = 0;
+      return hours * 60 + minutes;
+    }
+
+    final openMin = timeToMinutes(openTime);
+    final closeMin = timeToMinutes(closeTime);
+    final currentMin = referenceDate.hour * 60 + referenceDate.minute;
+
+    DateTime effectiveDate = referenceDate;
+    if (closeMin < openMin && currentMin < openMin) {
+      effectiveDate = referenceDate.subtract(const Duration(days: 1));
+    }
+
+    final effectiveTodayStr =
+        "${effectiveDate.year}-${effectiveDate.month.toString().padLeft(2, '0')}-${effectiveDate.day.toString().padLeft(2, '0')}";
+
     final weekdaysMap = {
       1: 'Mon',
       2: 'Tue',
@@ -93,7 +118,7 @@ class MarketResult {
       6: 'Sat',
       7: 'Sun',
     };
-    final currentDayAbbr = weekdaysMap[referenceDate.weekday] ?? '';
+    final currentDayAbbr = weekdaysMap[effectiveDate.weekday] ?? '';
     final isOpenToday = openDays.trim().isEmpty ||
         openDays
             .toLowerCase()
@@ -101,14 +126,17 @@ class MarketResult {
             .map((e) => e.trim().toLowerCase())
             .contains(currentDayAbbr.toLowerCase());
 
-    final isToday = resultDate == todayStr;
+    final isToday = resultDate == effectiveTodayStr;
     final isDeclared = isToday && isValueDeclared(resultValue);
 
-    final openParsed = _parseTimeStr(openTime, referenceDate);
+    final openParsed = _parseTimeStr(openTime, effectiveDate);
     final openTimeArrived =
         openParsed != null && referenceDate.isAfter(openParsed);
 
-    final closeParsed = _parseTimeStr(closeTime, referenceDate);
+    var closeParsed = _parseTimeStr(closeTime, effectiveDate);
+    if (closeMin < openMin && closeParsed != null) {
+      closeParsed = closeParsed.add(const Duration(days: 1));
+    }
     bool closeTimeArrived =
         closeParsed != null && referenceDate.isAfter(closeParsed);
 

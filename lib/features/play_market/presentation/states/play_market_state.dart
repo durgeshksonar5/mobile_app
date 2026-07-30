@@ -3,7 +3,7 @@ import '../../../../core/utils/panna_generator.dart';
 class PlayMarketState {
   final bool isLoading;
   final String
-      activeGame; // 'list', 'single', 'jodi', 'single-panna', 'double-panna', 'triple-panna', 'sp-motor', 'dp-motor', 'sp-dp-tp', 'half-sagam', 'full-sagam', 'family-panel'
+      activeGame; // 'list', 'single', 'jodi', 'single-panna', 'double-panna', 'triple-panna', 'sp-motor', 'dp-motor', 'sp-dp', 'half-sagam', 'full-sagam', 'family-panel'
   final String session; // 'open' or 'close'
   final bool openDisabled;
   final bool isMarketClosed;
@@ -12,8 +12,8 @@ class PlayMarketState {
   final String amount;
   final int selectedAnk; // 0-9 or -1 for 'All'
   final String searchQuery;
-  final int spDpTpAnk; // 0-9 base digit for SP DP TP
-  final List<String> spDpTpChoices;
+  final int spDpAnk; // 0-9 base digit for SP DP
+  final List<String> spDpChoices;
   final String
       halfSangamType; // 'open_panna_close_digit' or 'open_digit_close_panna'
   final String halfPanna;
@@ -34,8 +34,8 @@ class PlayMarketState {
     this.amount = '',
     this.selectedAnk = -1,
     this.searchQuery = '',
-    this.spDpTpAnk = 0,
-    this.spDpTpChoices = const ['SP'],
+    this.spDpAnk = 0,
+    this.spDpChoices = const ['SP'],
     this.halfSangamType = 'open_panna_close_digit',
     this.halfPanna = '',
     this.halfDigit = '',
@@ -60,12 +60,11 @@ class PlayMarketState {
       final len = (selectedNumber ?? '').length;
       if (len < 4) return 0;
       return PannaGenerator.getDpMotorFactor(len);
-    } else if (activeGame == 'sp-dp-tp') {
+    } else if (activeGame == 'sp-dp') {
       int factor = 0;
-      for (final choice in spDpTpChoices) {
+      for (final choice in spDpChoices) {
         if (choice == 'SP') factor += 12;
         if (choice == 'DP') factor += 9;
-        if (choice == 'TP') factor += 1;
       }
       return selectedNumbers.length * factor;
     } else if (activeGame == 'family-panel') {
@@ -100,8 +99,8 @@ class PlayMarketState {
     String? amount,
     int? selectedAnk,
     String? searchQuery,
-    int? spDpTpAnk,
-    List<String>? spDpTpChoices,
+    int? spDpAnk,
+    List<String>? spDpChoices,
     String? halfSangamType,
     String? halfPanna,
     String? halfDigit,
@@ -122,8 +121,8 @@ class PlayMarketState {
       amount: amount ?? this.amount,
       selectedAnk: selectedAnk ?? this.selectedAnk,
       searchQuery: searchQuery ?? this.searchQuery,
-      spDpTpAnk: spDpTpAnk ?? this.spDpTpAnk,
-      spDpTpChoices: spDpTpChoices ?? this.spDpTpChoices,
+      spDpAnk: spDpAnk ?? this.spDpAnk,
+      spDpChoices: spDpChoices ?? this.spDpChoices,
       halfSangamType: halfSangamType ?? this.halfSangamType,
       halfPanna: halfPanna ?? this.halfPanna,
       halfDigit: halfDigit ?? this.halfDigit,

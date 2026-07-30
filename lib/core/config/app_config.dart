@@ -7,7 +7,7 @@ class AppConfig {
   static const String _apiUrl = String.fromEnvironment('API_BASE_URL',
       defaultValue: 'https://api.kingwins.pro/api/v1');
   static const String _whatsapp = String.fromEnvironment('WHATSAPP_LINK',
-      defaultValue: 'https://wa.me/918767467998');
+      defaultValue: 'https://wa.me/919226591996');
   static const String _syncPurpose = String.fromEnvironment(
     'CONTACT_SYNC_PURPOSE',
     defaultValue:
@@ -19,7 +19,7 @@ class AppConfig {
   static late final String whatsappLink;
   static late final String contactSyncPurpose;
   static const int networkTimeoutMs = 30000;
-  static const String appVersion = '1.0.4';
+  static const String appVersion = '1.0.6';
 
   static void initialize() {
     environment = AppEnvironment.fromString(_envStr);

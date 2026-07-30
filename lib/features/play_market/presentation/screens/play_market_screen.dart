@@ -150,8 +150,8 @@ class PlayMarketScreen extends ConsumerWidget {
         'iconColor': const Color(0xFFBBF7D0),
       },
       {
-        'id': 'sp-dp-tp',
-        'name': 'SP DP TP',
+        'id': 'sp-dp',
+        'name': 'SP DP',
         'icon': Icons.grid_on,
         'color': const Color(0xFF332014),
         'border': const Color(0xFFFB923C),
@@ -496,8 +496,8 @@ class PlayMarketScreen extends ConsumerWidget {
         return _buildMotorPad(state, notifier, isSp: true);
       case 'dp-motor':
         return _buildMotorPad(state, notifier, isSp: false);
-      case 'sp-dp-tp':
-        return _buildSpDpTpPad(state, notifier);
+      case 'sp-dp':
+        return _buildSpDpPad(state, notifier);
       case 'cp':
         return _buildCPPad(state, notifier);
       case 'family-jodi':
@@ -862,8 +862,8 @@ class PlayMarketScreen extends ConsumerWidget {
     );
   }
 
-  // 3.3 SP DP TP Pad
-  Widget _buildSpDpTpPad(PlayMarketState state, PlayMarketViewModel notifier) {
+  // 3.3 SP DP Pad
+  Widget _buildSpDpPad(PlayMarketState state, PlayMarketViewModel notifier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -924,24 +924,16 @@ class PlayMarketScreen extends ConsumerWidget {
             Expanded(
               child: _buildCheckboxChip(
                 label: 'SP (12 Pannas)',
-                isSelected: state.spDpTpChoices.contains('SP'),
-                onTap: () => notifier.toggleSpDpTpChoice('SP'),
+                isSelected: state.spDpChoices.contains('SP'),
+                onTap: () => notifier.toggleSpDpChoice('SP'),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _buildCheckboxChip(
                 label: 'DP (9 Pannas)',
-                isSelected: state.spDpTpChoices.contains('DP'),
-                onTap: () => notifier.toggleSpDpTpChoice('DP'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildCheckboxChip(
-                label: 'TP (1 Panna)',
-                isSelected: state.spDpTpChoices.contains('TP'),
-                onTap: () => notifier.toggleSpDpTpChoice('TP'),
+                isSelected: state.spDpChoices.contains('DP'),
+                onTap: () => notifier.toggleSpDpChoice('DP'),
               ),
             ),
           ],

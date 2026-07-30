@@ -99,18 +99,18 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
     state = state.copyWith(amount: amt);
   }
 
-  void setSpDpTpAnk(int ank) {
-    state = state.copyWith(spDpTpAnk: ank);
+  void setSpDpAnk(int ank) {
+    state = state.copyWith(spDpAnk: ank);
   }
 
-  void toggleSpDpTpChoice(String choice) {
-    final list = List<String>.from(state.spDpTpChoices);
+  void toggleSpDpChoice(String choice) {
+    final list = List<String>.from(state.spDpChoices);
     if (list.contains(choice)) {
       if (list.length > 1) list.remove(choice);
     } else {
       list.add(choice);
     }
-    state = state.copyWith(spDpTpChoices: list);
+    state = state.copyWith(spDpChoices: list);
   }
 
   void setSelectedAnk(int ank) {
@@ -206,10 +206,10 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
         for (final numStr in state.selectedNumbers) {
           bids.add(_BidToPlace(numStr, amt));
         }
-      } else if (state.activeGame == 'sp-dp-tp') {
+      } else if (state.activeGame == 'sp-dp') {
         for (final numStr in state.selectedNumbers) {
-          for (final choice in state.spDpTpChoices) {
-            final choiceFactor = choice == 'SP' ? 12 : (choice == 'DP' ? 9 : 1);
+          for (final choice in state.spDpChoices) {
+            final choiceFactor = choice == 'SP' ? 12 : 9;
             bids.add(_BidToPlace('$numStr-$choice', amt * choiceFactor));
           }
         }

@@ -11,12 +11,38 @@ import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/play_market/presentation/screens/play_market_screen.dart';
 import '../../features/contact_sync/presentation/screens/contact_sync_screen.dart';
 
+class RouterListenable extends ChangeNotifier {
+  final Ref _ref;
+
+  RouterListenable(this._ref) {
+    _ref.listen(
+      authViewModelProvider,
+      (previous, next) {
+        final prevAuth = previous?.isAuthenticated ?? false;
+        final nextAuth = next.isAuthenticated;
+        final prevBlocked = previous?.isBlocked ?? false;
+        final nextBlocked = next.isBlocked;
+
+        if (prevAuth != nextAuth || prevBlocked != nextBlocked) {
+          notifyListeners();
+        }
+      },
+    );
+  }
+}
+
+final routerListenableProvider = Provider<RouterListenable>((ref) {
+  return RouterListenable(ref);
+});
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authViewModelProvider);
+  final listenable = ref.watch(routerListenableProvider);
 
   return GoRouter(
     initialLocation: RoutePaths.home,
+    refreshListenable: listenable,
     redirect: (context, state) {
+      final authState = ref.read(authViewModelProvider);
       final isAuth = authState.isAuthenticated;
       final isBlocked = authState.isBlocked;
       final isLoggingIn = state.matchedLocation == RoutePaths.login;

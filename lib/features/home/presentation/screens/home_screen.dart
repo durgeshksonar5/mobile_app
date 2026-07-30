@@ -811,8 +811,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     ),
                   ));
                 } else {
-                  for (var i = 0; i < homeState.markets.length; i++) {
-                    final m = homeState.markets[i];
+                  final sortedMarketsForMarquee = List<MarketResult>.from(homeState.markets)
+                    ..sort((a, b) => a.getOpenTimeMinutes().compareTo(b.getOpenTimeMinutes()));
+                  for (var i = 0; i < sortedMarketsForMarquee.length; i++) {
+                    final m = sortedMarketsForMarquee[i];
                     final info = m.getDisplayInfo(todayStr, now);
                     
                     spans.add(const TextSpan(
@@ -843,7 +845,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       ),
                     ));
                     
-                    if (i < homeState.markets.length - 1) {
+                    if (i < sortedMarketsForMarquee.length - 1) {
                       spans.add(const TextSpan(
                         text: '      ',
                       ));
@@ -1082,15 +1084,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
 
     final sortedMarkets = List<MarketResult>.from(state.markets)..sort((a, b) {
-      final aInfo = a.getDisplayInfo(todayStr, now);
-      final bInfo = b.getDisplayInfo(todayStr, now);
-
-      final aClosed = aInfo.statusType == 'closed';
-      final bClosed = bInfo.statusType == 'closed';
-
-      if (aClosed != bClosed) {
-        return aClosed ? 1 : -1;
-      }
       return a.getOpenTimeMinutes().compareTo(b.getOpenTimeMinutes());
     });
 
@@ -1947,15 +1940,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
     final sortedMarkets = List<MarketResult>.from(state.markets)..sort((a, b) {
-      final aInfo = a.getDisplayInfo(todayStr, now);
-      final bInfo = b.getDisplayInfo(todayStr, now);
-
-      final aClosed = aInfo.statusType == 'closed';
-      final bClosed = bInfo.statusType == 'closed';
-
-      if (aClosed != bClosed) {
-        return aClosed ? 1 : -1;
-      }
       return a.getOpenTimeMinutes().compareTo(b.getOpenTimeMinutes());
     });
 
