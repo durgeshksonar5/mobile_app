@@ -111,6 +111,22 @@ class ResultsService {
     }
   }
 
+  Future<Map<String, dynamic>> placeBidsBatch({
+    required List<Map<String, dynamic>> bids,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post('/bets/place-batch/', data: {
+        'bids': bids,
+      });
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw ServerException(
+        e.response?.data?['error']?.toString() ?? 'Failed to place bets.',
+        e.response?.statusCode,
+      );
+    }
+  }
+
   Future<List<dynamic>> getBids() async {
     try {
       final response = await _apiClient.dio.get('/bets/');

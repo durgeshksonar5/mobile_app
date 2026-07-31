@@ -171,7 +171,7 @@ class MarketCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primaryGold,
+                            color: Color(0xFF16A34A),
                           ),
                         ),
                       ],
@@ -203,7 +203,7 @@ class MarketCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primaryGold,
+                            color: Color(0xFFDC2626),
                           ),
                         ),
                       ],

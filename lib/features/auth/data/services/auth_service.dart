@@ -18,11 +18,11 @@ class AuthService {
       });
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      final detail = e.response?.data?['detail'];
-      if (detail == 'ACCOUNT_BLOCKED') {
+      final data = e.response?.data;
+      if (data is Map && data['detail'] == 'ACCOUNT_BLOCKED') {
         throw const AccountBlockedException();
       }
-      final errorMsg = _parseError(e.response?.data, 'Invalid phone number or password.');
+      final errorMsg = _parseError(data, 'Invalid phone number or password.');
       throw ServerException(errorMsg, e.response?.statusCode);
     }
   }
@@ -107,18 +107,18 @@ class AuthService {
   }
 
   String _parseError(dynamic data, String defaultMsg) {
-    if (data is Map<String, dynamic>) {
-      if (data['detail'] is String) return data['detail'];
-      if (data['error'] is String) return data['error'];
-      if (data['message'] is String) return data['message'];
+    if (data is Map) {
+      if (data['detail'] is String) return data['detail'] as String;
+      if (data['error'] is String) return data['error'] as String;
+      if (data['message'] is String) return data['message'] as String;
       if (data['non_field_errors'] is List) {
         return (data['non_field_errors'] as List).join(', ');
       }
-      if (data['non_field_errors'] is String) return data['non_field_errors'];
+      if (data['non_field_errors'] is String) return data['non_field_errors'] as String;
 
       final errorList = <String>[];
       data.forEach((key, val) {
-        String cleanKey = key;
+        String cleanKey = key.toString();
         if (key == 'phone_number') cleanKey = 'Phone number';
         if (key == 'first_name') cleanKey = 'First name';
         if (key == 'last_name') cleanKey = 'Last name';
@@ -126,8 +126,8 @@ class AuthService {
         if (key == 'email') cleanKey = 'Email';
         if (key == 'password') cleanKey = 'Password';
 
-        if (cleanKey == key && key.isNotEmpty) {
-          cleanKey = key[0].toUpperCase() + key.substring(1).replaceAll('_', ' ');
+        if (cleanKey == key.toString() && cleanKey.isNotEmpty) {
+          cleanKey = cleanKey[0].toUpperCase() + cleanKey.substring(1).replaceAll('_', ' ');
         }
 
         String valStr = '';

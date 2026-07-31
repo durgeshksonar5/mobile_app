@@ -28,11 +28,11 @@ class BidItem {
       final digits = selectedNumber.split('').toSet().length;
       final factor = digits == 3 ? 8 : (digits == 2 ? 6 : 4);
       return (amount / factor).round();
-    } else if (gType == 'SP DP TP') {
+    } else if (gType == 'SP DP') {
       final parts = selectedNumber.split('-');
       if (parts.length == 2) {
         final choice = parts[1].toUpperCase();
-        final factor = choice == 'SP' ? 12 : (choice == 'DP' ? 9 : 10);
+        final factor = choice == 'SP' ? 12 : 9;
         return (amount / factor).round();
       }
     } else if (gType == 'CP') {

@@ -93,6 +93,23 @@ class ResultsRepository {
     });
   }
 
+  Future<void> placeBidsBatch(List<Map<String, dynamic>> bids) async {
+    await _resultsService.placeBidsBatch(bids: bids);
+
+    for (final bid in bids) {
+      await _preferences.saveLocalBid({
+        'id': 'bid_${DateTime.now().millisecondsSinceEpoch}_${bid['selected_number']}',
+        'market_name': bid['market_name'],
+        'game_type': bid['game_type'],
+        'session': bid['session'],
+        'selected_number': bid['selected_number'],
+        'amount': bid['amount'],
+        'status': 'Active',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    }
+  }
+
   Future<List<BidItem>> getBids() async {
     try {
       final rawList = await _resultsService.getBids();

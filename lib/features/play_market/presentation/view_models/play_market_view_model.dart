@@ -262,15 +262,15 @@ class PlayMarketViewModel extends StateNotifier<PlayMarketState> {
         bids.add(_BidToPlace(numStr, amt));
       }
 
-      for (final bid in bids) {
-        await _repository.placeBid(
-          marketName: marketName,
-          gameType: state.activeGame.replaceAll('-', ' ').toUpperCase(),
-          session: state.session.toUpperCase(),
-          selectedNumber: bid.selectedNumber,
-          amount: bid.amount,
-        );
-      }
+      final List<Map<String, dynamic>> bidsPayload = bids.map((bid) => {
+        'market_name': marketName,
+        'game_type': state.activeGame.replaceAll('-', ' ').toUpperCase(),
+        'session': state.session.toUpperCase(),
+        'selected_number': bid.selectedNumber,
+        'amount': bid.amount,
+      }).toList();
+
+      await _repository.placeBidsBatch(bidsPayload);
       _ref.read(walletViewModelProvider.notifier).fetchBalance(isRefresh: true);
       state = state.copyWith(isLoading: false, activeGame: 'list');
       return true;
