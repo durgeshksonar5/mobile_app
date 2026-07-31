@@ -43,13 +43,13 @@ class MarketCard extends StatelessWidget {
       playButton = GestureDetector(
         onTap: onPlayTap,
         child: Container(
-          width: 52,
-          height: 52,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(color: statusColor, width: 2),
           ),
-          padding: const EdgeInsets.all(3),
+          padding: const EdgeInsets.all(2.5),
           child: Container(
             decoration: BoxDecoration(
               color: statusColor,
@@ -58,20 +58,20 @@ class MarketCard extends StatelessWidget {
             child: const Icon(
               Icons.play_arrow_rounded,
               color: Colors.white,
-              size: 32,
+              size: 28,
             ),
           ),
         ),
       );
     } else {
       playButton = Container(
-        width: 52,
-        height: 52,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(color: Colors.grey.shade400, width: 2),
         ),
-        padding: const EdgeInsets.all(3),
+        padding: const EdgeInsets.all(2.5),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.grey.shade400,
@@ -80,39 +80,17 @@ class MarketCard extends StatelessWidget {
           child: const Icon(
             Icons.lock_rounded,
             color: Colors.white,
-            size: 20,
+            size: 18,
           ),
         ),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
-        gradient: info.canPlay
-            ? const LinearGradient(
-                colors: [
-                  Color(0x26E6B450), // Gold-bronze edge (15% opacity)
-                  Color(0xFFFFFFFF), // Pure white center start
-                  Color(0xFFFFFFFF), // Pure white center end
-                  Color(0x26E6B450), // Gold-bronze edge (15% opacity)
-                ],
-                stops: [0.0, 0.3, 0.7, 1.0],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              )
-            : LinearGradient(
-                colors: [
-                  const Color(0x1AA0A0A0), // Muted grey edge (10% opacity)
-                  const Color(0xFFFFFFFF),
-                  const Color(0xFFFFFFFF),
-                  const Color(0x1AA0A0A0),
-                ],
-                stops: const [0.0, 0.3, 0.7, 1.0],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: info.canPlay
               ? const Color(0xFFE7D5A2).withOpacity(0.8)
@@ -122,10 +100,10 @@ class MarketCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: info.canPlay
-                ? const Color(0xFFE4AA25).withOpacity(0.08)
+                ? const Color(0xFFE4AA25).withOpacity(0.06)
                 : Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 9,
+            offset: const Offset(0, 3.5),
           ),
         ],
       ),
@@ -142,36 +120,36 @@ class MarketCard extends StatelessWidget {
                 Text(
                   market.marketName.toUpperCase(),
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: 20,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF1E1E1E),
                     letterSpacing: 0.2,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3.5),
 
                 // Result Value (Bold Gold)
                 Text(
                   info.resultValue,
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 22.5,
                     fontWeight: FontWeight.w800,
                     color: AppColors.primaryGold, // Theme gold: Color(0xFFE4AA25)
                     letterSpacing: 1.0,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3.5),
 
                 // Status text (Betting is Running / Closed)
                 Text(
                   statusText,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: statusColor,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 9),
 
                 // Timings Row
                 Row(
@@ -182,7 +160,7 @@ class MarketCard extends StatelessWidget {
                         const Text(
                           'Time Open :',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF1E1E1E),
                           ),
@@ -191,30 +169,30 @@ class MarketCard extends StatelessWidget {
                         Text(
                           market.openTime.toLowerCase(),
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primaryGold,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 13),
                     const Text(
                       '|',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 20,
                         color: Colors.grey,
                         fontWeight: FontWeight.w300,
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 13),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
                           'Time Close :',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF1E1E1E),
                           ),
@@ -223,7 +201,7 @@ class MarketCard extends StatelessWidget {
                         Text(
                           market.closeTime.toLowerCase(),
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primaryGold,
                           ),
@@ -248,10 +226,10 @@ class MarketCard extends StatelessWidget {
                 child: const Icon(
                   Icons.calendar_month_outlined,
                   color: AppColors.primaryGold,
-                  size: 34,
+                  size: 30,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               // Play/Locked Action
               playButton,
             ],
