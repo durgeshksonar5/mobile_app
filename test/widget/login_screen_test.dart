@@ -52,6 +52,8 @@ class FakeAuthRepository implements AuthRepository {
   Future<UserModel> updateProfile(Map<String, dynamic> data) async => dummyUser;
   @override
   Future<void> logout() async {}
+  @override
+  Future<String?> getLatestAppVersion() async => null;
 }
 
 void main() {

@@ -60,6 +60,8 @@ class FakeAuthRepository implements AuthRepository {
   Future<UserModel> updateProfile(Map<String, dynamic> data) async => dummyUser;
   @override
   Future<void> logout() async {}
+  @override
+  Future<String?> getLatestAppVersion() async => null;
 }
 
 class FakeWalletRepository implements WalletRepository {
@@ -93,6 +95,8 @@ class FakeResultsRepository implements ResultsRepository {
   Future<void> createDepositRequest(int amount) async {}
   @override
   Future<void> createWithdrawRequest(int amount) async {}
+  @override
+  Future<void> placeBidsBatch(List<Map<String, dynamic>> bids) async {}
 }
 
 void main() {

@@ -46,6 +46,8 @@ class FakeFailingAuthRepository implements AuthRepository {
 
   @override
   Future<void> logout() async {}
+  @override
+  Future<String?> getLatestAppVersion() async => null;
 }
 
 void main() {

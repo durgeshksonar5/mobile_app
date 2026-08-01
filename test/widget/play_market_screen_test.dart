@@ -33,6 +33,8 @@ class FakeResultsRepository implements ResultsRepository {
   Future<void> createDepositRequest(int amount) async {}
   @override
   Future<void> createWithdrawRequest(int amount) async {}
+  @override
+  Future<void> placeBidsBatch(List<Map<String, dynamic>> bids) async {}
 }
 
 void main() {
@@ -60,9 +62,9 @@ void main() {
     expect(find.text('Single Panna'), findsOneWidget);
     expect(find.text('Double Panna'), findsOneWidget);
     expect(find.text('Triple Panna'), findsOneWidget);
-    expect(find.text('SP Motor'), findsOneWidget);
-    expect(find.text('DP Motor'), findsOneWidget);
-    expect(find.text('SP DP TP'), findsOneWidget);
+    expect(find.text('(mpsp) SP Motor'), findsOneWidget);
+    expect(find.text('(mpdp) DP Motor'), findsOneWidget);
+    expect(find.text('SP DP'), findsOneWidget);
     expect(find.text('Family Panel'), findsOneWidget);
     expect(find.text('Half Sangam'), findsOneWidget);
     expect(find.text('Full Sangam'), findsOneWidget);
