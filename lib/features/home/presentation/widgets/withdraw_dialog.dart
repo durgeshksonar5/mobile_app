@@ -50,10 +50,10 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
     }
 
     final amt = int.tryParse(_amountController.text.trim());
-    if (amt == null || amt <= 0) {
+    if (amt == null || amt < 100) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Please enter a valid withdrawal amount.')),
+            content: Text('Minimum withdrawal amount required is ₹100.')),
       );
       return;
     }
@@ -85,6 +85,7 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
           : '';
 
       ExternalLinkService.launchWhatsApp(
+        target: WhatsAppTarget.withdraw,
         customMessage:
             'Withdraw Request\nUsername: $username\nAmount: ₹$amt\nPhone Number: $userPhone$bankText$upiText$upiNumText',
       );

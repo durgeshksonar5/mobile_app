@@ -19,7 +19,8 @@ class AppConfig {
   static late final String whatsappLink;
   static late final String contactSyncPurpose;
   static const int networkTimeoutMs = 30000;
-  static const String appVersion = '1.0.7';
+  static const String appVersion = '1.0.8';
+  static const String updateUrl = 'https://download.kingwins.pro/apk-kingwins';
 
   static void initialize() {
     environment = AppEnvironment.fromString(_envStr);

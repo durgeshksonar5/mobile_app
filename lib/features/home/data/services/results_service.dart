@@ -146,4 +146,21 @@ class ResultsService {
       return [];
     }
   }
+
+  Future<Map<String, dynamic>> getWhatsAppConfig() async {
+    try {
+      final response = await _apiClient.dio.get('/whatsapp-config/');
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+        if (data['data'] is Map<String, dynamic>) {
+          return data['data'] as Map<String, dynamic>;
+        }
+        return data;
+      }
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
 }
+

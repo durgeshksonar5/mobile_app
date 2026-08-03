@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/market_result.dart';
 import '../../../../app/theme/app_colors.dart';
-import '../../../../app/theme/app_spacing.dart';
+
 
 class MarketCard extends StatelessWidget {
   final MarketResult market;
@@ -93,15 +93,15 @@ class MarketCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: info.canPlay
-              ? const Color(0xFFE7D5A2).withOpacity(0.8)
+              ? const Color(0xFFE7D5A2).withValues(alpha: 0.8)
               : Colors.grey.shade300,
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
             color: info.canPlay
-                ? const Color(0xFFE4AA25).withOpacity(0.06)
-                : Colors.black.withOpacity(0.03),
+                ? const Color(0xFFE4AA25).withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: 0.03),
             blurRadius: 9,
             offset: const Offset(0, 3.5),
           ),

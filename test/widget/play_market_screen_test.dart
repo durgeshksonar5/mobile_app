@@ -12,6 +12,8 @@ import 'package:king_wins_mobile_app/features/home/domain/models/game_rate.dart'
 
 class FakeResultsRepository implements ResultsRepository {
   @override
+  Future<void> fetchAndSyncWhatsAppConfig() async {}
+  @override
   Future<List<MarketResult>> getLiveResults() async => [];
   @override
   Future<List<MarketResult>> getSattaHistory(String marketName) async => [];

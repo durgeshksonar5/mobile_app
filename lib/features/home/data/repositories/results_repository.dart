@@ -4,6 +4,7 @@ import '../../domain/models/bid_item.dart';
 import '../../domain/models/game_rate.dart';
 import '../services/results_service.dart';
 import '../../../../core/storage/preferences_service.dart';
+import '../../../../core/services/external_link_service.dart';
 
 class ResultsRepository {
   final ResultsService _resultsService;
@@ -11,8 +12,23 @@ class ResultsRepository {
 
   ResultsRepository(this._resultsService, this._preferences);
 
+  Future<void> fetchAndSyncWhatsAppConfig() async {
+    try {
+      final config = await _resultsService.getWhatsAppConfig();
+      if (config.isNotEmpty) {
+        ExternalLinkService.updateWhatsAppConfig(
+          support: config['support_whatsapp']?.toString(),
+          deposit: config['deposit_whatsapp']?.toString(),
+          withdraw: config['withdraw_whatsapp']?.toString(),
+        );
+      }
+    } catch (_) {}
+  }
+
   Future<List<MarketResult>> getLiveResults() async {
+    fetchAndSyncWhatsAppConfig();
     final rawList = await _resultsService.getLiveResults();
+
     return rawList
         .where((item) =>
             item is Map<String, dynamic> && item['market_name'] != null)

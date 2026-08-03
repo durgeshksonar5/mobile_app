@@ -10,6 +10,7 @@ import '../../../../core/widgets/marquee_ticker.dart';
 import '../../../../core/widgets/app_loading.dart';
 import '../../../../core/widgets/app_empty_view.dart';
 import '../../../../core/services/external_link_service.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../auth/presentation/view_models/auth_view_model.dart';
 import '../widgets/sidebar_drawer.dart';
 import '../widgets/market_card.dart';
@@ -612,7 +613,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 child: ElevatedButton(
                   onPressed: () async {
                     await ExternalLinkService.launchUrlExternal(
-                        'https://www.kingwins.pro');
+                        AppConfig.updateUrl);
                   },
                   child: const Text(
                     'UPDATE APP NOW',
@@ -1935,10 +1936,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildChartsView(BuildContext context, HomeState state) {
-    final DateTime now = DateTime.now();
-    final String todayStr =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-
     final sortedMarkets = List<MarketResult>.from(state.markets)..sort((a, b) {
       return a.getOpenTimeMinutes().compareTo(b.getOpenTimeMinutes());
     });

@@ -74,6 +74,8 @@ class FakeWalletRepository implements WalletRepository {
 
 class FakeResultsRepository implements ResultsRepository {
   @override
+  Future<void> fetchAndSyncWhatsAppConfig() async {}
+  @override
   Future<List<MarketResult>> getLiveResults() async => [];
   @override
   Future<List<MarketResult>> getSattaHistory(String marketName) async => [];

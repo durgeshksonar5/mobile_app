@@ -1,17 +1,61 @@
 import 'package:url_launcher/url_launcher.dart';
-import '../config/app_config.dart';
+
+enum WhatsAppTarget {
+  support,
+  deposit,
+  withdraw,
+}
 
 class ExternalLinkService {
-  static Future<bool> launchWhatsApp({String? customMessage}) async {
-    final baseUrl = AppConfig.whatsappLink;
-    if (baseUrl.trim().isEmpty) {
-      return false;
+  static String supportWhatsAppNumber = '8767467998';
+  static String depositWhatsAppNumber = '8767467998';
+  static String withdrawWhatsAppNumber = '8767467998';
+
+  static void updateWhatsAppConfig({
+    String? support,
+    String? deposit,
+    String? withdraw,
+  }) {
+    if (support != null && support.trim().isNotEmpty) {
+      supportWhatsAppNumber = support.trim();
+    }
+    if (deposit != null && deposit.trim().isNotEmpty) {
+      depositWhatsAppNumber = deposit.trim();
+    }
+    if (withdraw != null && withdraw.trim().isNotEmpty) {
+      withdrawWhatsAppNumber = withdraw.trim();
+    }
+  }
+
+  static Future<bool> launchWhatsApp({
+    WhatsAppTarget target = WhatsAppTarget.support,
+    String? customMessage,
+    String? explicitNumber,
+  }) async {
+    String phoneNum = explicitNumber ?? '';
+    if (phoneNum.isEmpty) {
+      switch (target) {
+        case WhatsAppTarget.deposit:
+          phoneNum = depositWhatsAppNumber;
+          break;
+        case WhatsAppTarget.withdraw:
+          phoneNum = withdrawWhatsAppNumber;
+          break;
+        case WhatsAppTarget.support:
+          phoneNum = supportWhatsAppNumber;
+          break;
+      }
     }
 
-    Uri uri = Uri.parse(baseUrl);
+    String cleanPhone = phoneNum.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.isEmpty) {
+      cleanPhone = '8767467998';
+    }
+
+    final urlString = 'https://wa.me/91$cleanPhone';
+    Uri uri = Uri.parse(urlString);
     if (customMessage != null && customMessage.isNotEmpty) {
       uri = uri.replace(queryParameters: {
-        ...uri.queryParameters,
         'text': customMessage,
       });
     }

@@ -26,9 +26,10 @@ class _AddFundDialogState extends ConsumerState<AddFundDialog> {
 
   void _submitDeposit() async {
     final amt = int.tryParse(_amountController.text.trim());
-    if (amt == null || amt <= 0) {
+    if (amt == null || amt < 100) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid deposit amount.')),
+        const SnackBar(
+            content: Text('Minimum deposit amount required is ₹100.')),
       );
       return;
     }
@@ -42,6 +43,7 @@ class _AddFundDialogState extends ConsumerState<AddFundDialog> {
       final username = user?.name ?? 'Unknown';
       final userPhone = user?.phoneNumber ?? 'Unknown';
       ExternalLinkService.launchWhatsApp(
+        target: WhatsAppTarget.deposit,
         customMessage:
             'Deposit Request\nUsername: $username\nAmount: ₹$amt\nPhone Number: $userPhone',
       );
